@@ -113,7 +113,7 @@ dev = [
     "nbstripout>=0.7",              # Um utilitário para remover saídas e metadados de notebooks do Jupyter
     # Workflow
     "pre-commit>=3.7",              # Um framework para gerenciar hooks de commit no Git
-    "commitizen>=3.27",             # Um utilitário para manter o histórico de commits consistente
+    "commitizen>=4.16.5",             # Um utilitário para manter o histórico de commits consistente
     # Documentação
     "mkdocs-material>=9.5",         # Um tema para MkDocs
     "mkdocstrings[python]>=0.25",   # Um plugin para MkDocs que gera documentação a partir de docstrings
