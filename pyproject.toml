@@ -9,7 +9,7 @@ name = "previsao-churn-explicavel"
 version = "0.1.0"
 description = "Previsão de churn (não recompra) de clientes Olist com RFM, LightGBM e explicabilidade via SHAP."
 readme = "README.md"
-requires-python = ">=3.12, <3.14"
+requires-python = ">=3.10, <3.14"
 license = { text = "MIT" }
 authors = [{ name = "Luan Freitas", email = "luan.mgf@gmail.com" }]
 keywords = ["churn", "shap", "lightgbm", "rfm", "explainable-ai", "olist"]
@@ -45,7 +45,6 @@ dependencies = [
     # Visualização
     "seaborn>=0.13",
     "matplotlib>=3.9",
-    "plotly>=6.0",
     # Dashboarding
     "streamlit>=1.59.2",
     # Modelagem
