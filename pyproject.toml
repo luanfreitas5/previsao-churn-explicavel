@@ -45,7 +45,6 @@ dependencies = [
     # Visualização
     "seaborn>=0.13",
     "matplotlib>=3.9",
-    "plotly>=6.9.0",
     # Dashboarding
     "streamlit>=1.30",
     # Modelagem
