@@ -1,0 +1,53 @@
+# =============================================================================
+# mkdocs.yml — documentação MkDocs Material + mkdocstrings (API a partir das
+# docstrings NumPy em pt-BR).
+# =============================================================================
+site_name: Previsão de Churn Explicável
+site_description: Previsão de churn (não recompra) de clientes Olist com RFM, LightGBM e SHAP.
+docs_dir: docs
+
+theme:
+  name: material
+  language: pt-BR
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-night
+        name: Modo escuro
+    - scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-sunny
+        name: Modo claro
+  features:
+    - navigation.sections
+    - navigation.top
+    - content.code.copy
+    - search.suggest
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [.]
+          options:
+            docstring_style: numpy
+            show_source: true
+            show_root_heading: true
+
+markdown_extensions:
+  - admonition
+  - pymdownx.superfences
+  - pymdownx.highlight
+  - toc:
+      permalink: true
+
+nav:
+  - Início: index.md
+  - Guia de uso: guia-uso.md
+  - Arquitetura: arquitetura.md
+  - Referência da API: referencia.md
