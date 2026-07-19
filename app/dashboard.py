@@ -18,7 +18,6 @@ import plotly.express as px
 import plotly.graph_objects as go
 import polars as pl
 import streamlit as st
-
 from src.config.paths import get_paths
 from src.config.settings import load_settings
 from src.constants import columns as c
@@ -71,7 +70,7 @@ def _plot_global_importance(importances: pd.DataFrame) -> go.Figure:
         title="Fatores que mais influenciam o churn",
         xaxis_title="Impacto médio absoluto (SHAP)",
         yaxis_title="",
-        margin=dict(l=10, r=10, t=50, b=10),
+        margin={"l": 10, "r": 10, "t": 50, "b": 10},
     )
     return fig
 
@@ -106,8 +105,8 @@ def _plot_instance(contributions: pd.DataFrame) -> go.Figure:
     fig.update_layout(
         title="Por que este cliente foi classificado assim?",
         xaxis_title="Contribuição para o risco de churn (SHAP)",
-        yaxis=dict(autorange="reversed"),
-        margin=dict(l=10, r=10, t=50, b=10),
+        yaxis={"autorange": "reversed"},
+        margin={"l": 10, "r": 10, "t": 50, "b": 10},
     )
     return fig
 
@@ -123,7 +122,7 @@ def main() -> None:
 
     try:
         model, test, explainer = _load_artifacts()
-    except Exception as exc:  # noqa: BLE001 - superfície de UI: exibe erro amigável
+    except Exception as exc:
         st.error(f"Não foi possível carregar os artefatos: {exc}")
         st.info("Rode `make pipeline` para gerar features, modelo e avaliações.")
         return
@@ -200,7 +199,6 @@ def settings_top_n() -> int:
         Número de contribuições SHAP a exibir (padrão 12).
     """
     import yaml
-
     from src.config.paths import CONFIGS_DIR
 
     deploy_yaml = CONFIGS_DIR / "deploy.yaml"
