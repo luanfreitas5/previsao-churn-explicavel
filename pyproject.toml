@@ -81,7 +81,7 @@ torchaudio = { index = "pytorch-cu129" }
 # Dashboard interativo de explicabilidade (Streamlit + Plotly)
 app = [
     "streamlit>=1.59.2",
-    "plotly>=5.22",
+    "plotly>=6.9.0",
 ]
 
 
