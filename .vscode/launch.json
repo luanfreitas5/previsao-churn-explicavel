@@ -1,0 +1,41 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Pipeline: features",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "src.main",
+      "args": ["features"],
+      "console": "integratedTerminal",
+      "justMyCode": false
+    },
+    {
+      "name": "Pipeline: train",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "src.main",
+      "args": ["train"],
+      "console": "integratedTerminal",
+      "justMyCode": false
+    },
+    {
+      "name": "Pipeline: all",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "src.main",
+      "args": ["all"],
+      "console": "integratedTerminal",
+      "justMyCode": false
+    },
+    {
+      "name": "Dashboard (Streamlit)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "streamlit",
+      "args": ["run", "app/dashboard.py"],
+      "console": "integratedTerminal",
+      "justMyCode": false
+    }
+  ]
+}

@@ -1,0 +1,47 @@
+# =============================================================================
+# Docs — constrói e publica a documentação (MkDocs Material) no GitHub Pages.
+# Usa `mkdocs gh-deploy` (branch gh-pages). Configure Pages para servir a
+# partir do branch gh-pages nas settings do repositório.
+# =============================================================================
+name: Docs
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docs/**"
+      - "src/**"
+      - "mkdocs.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write   # necessário para o gh-deploy publicar no branch gh-pages
+
+concurrency:
+  group: docs-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-deploy:
+    name: Build & Deploy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+          python-version: "3.12"
+
+      - run: uv sync --dev
+
+      - name: Configurar identidade do git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Publicar documentação
+        run: uv run mkdocs gh-deploy --force
