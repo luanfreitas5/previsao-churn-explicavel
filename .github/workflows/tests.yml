@@ -32,6 +32,10 @@ jobs:
           cache-dependency-glob: "uv.lock"
           python-version: ${{ matrix.python-version }}
 
+      - name: Instalar libomp (macOS - necessario para o LightGBM)
+        if: runner.os == 'macOS'
+        run: brew install libomp
+
       - name: Instalar dependências
         run: uv sync --dev
 
