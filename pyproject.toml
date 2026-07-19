@@ -9,7 +9,7 @@ name = "previsao-churn-explicavel"
 version = "0.1.0"
 description = "Previsão de churn (não recompra) de clientes Olist com RFM, LightGBM e explicabilidade via SHAP."
 readme = "README.md"
-requires-python = ">=3.12, <3.14"
+requires-python = ">=3.10, <3.14"
 license = { text = "MIT" }
 authors = [{ name = "Luan Freitas", email = "luan.mgf@gmail.com" }]
 keywords = ["churn", "shap", "lightgbm", "rfm", "explainable-ai", "olist"]
@@ -45,9 +45,8 @@ dependencies = [
     # Visualização
     "seaborn>=0.13",
     "matplotlib>=3.9",
-    "plotly>=6.0",
     # Dashboarding
-    "streamlit>=1.30",
+    "streamlit>=1.59.2",
     # Modelagem
     "scikit-learn>=1.5",
     "lightgbm>=4.3",
@@ -81,8 +80,8 @@ torchaudio = { index = "pytorch-cu129" }
 [project.optional-dependencies]
 # Dashboard interativo de explicabilidade (Streamlit + Plotly)
 app = [
-    "streamlit>=1.36",
-    "plotly>=5.22",
+    "streamlit>=1.59.2",
+    "plotly>=6.9.0",
 ]
 
 
@@ -113,9 +112,9 @@ dev = [
     "nbstripout>=0.7",              # Um utilitário para remover saídas e metadados de notebooks do Jupyter
     # Workflow
     "pre-commit>=3.7",              # Um framework para gerenciar hooks de commit no Git
-    "commitizen>=3.27",             # Um utilitário para manter o histórico de commits consistente
+    "commitizen>=4.16.5",             # Um utilitário para manter o histórico de commits consistente
     # Documentação
-    "mkdocs-material>=9.5",         # Um tema para MkDocs
+    "mkdocs-material>=9.7.7",         # Um tema para MkDocs
     "mkdocstrings[python]>=0.25",   # Um plugin para MkDocs que gera documentação a partir de docstrings
     # Profiling (use sob demanda)
     "scalene>=1.5",                 # Um profiler de performance para Python

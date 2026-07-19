@@ -1,0 +1,53 @@
+# =============================================================================
+# config.yaml — configurações gerais do projeto de previsão de churn.
+# Validado em runtime por src/config/settings.py (Pydantic).
+# =============================================================================
+
+project:
+  name: previsao-churn-explicavel
+  random_seed: 42
+
+# --- Definição do problema de churn ----------------------------------------
+# O dataset Olist é transacional e a maioria dos clientes compra uma única vez.
+# Definimos churn como "não recompra" a partir de uma data de corte (snapshot):
+#   1. A base considera clientes com pelo menos um pedido ATÉ `cutoff_date`.
+#   2. As features (RFM etc.) são calculadas apenas com pedidos <= `cutoff_date`
+#      (evita vazamento de futuro).
+#   3. Alvo churn = 1 se o cliente NÃO fizer nenhum pedido na janela
+#      (cutoff_date, cutoff_date + horizon_days]; caso contrário churn = 0.
+churn:
+  # Data de corte do snapshot (dados vão de 2016-09 a 2018-10).
+  cutoff_date: "2018-03-01"
+  # Janela futura, em dias, usada para observar recompra.
+  horizon_days: 180
+  # Status de pedido considerados válidos para a base (exclui cancelados).
+  valid_order_statuses:
+    - delivered
+    - shipped
+    - invoiced
+    - approved
+  # Identificador de cliente ao longo do tempo (agrega múltiplos pedidos).
+  customer_key: customer_unique_id
+
+# --- Divisão de dados ------------------------------------------------------
+split:
+  test_size: 0.2
+  stratify: true
+
+# --- Validação cruzada -----------------------------------------------------
+cross_validation:
+  n_splits: 5
+  shuffle: true
+
+# --- Atributo sensível para auditoria de justiça (fairlearn) ---------------
+fairness:
+  sensitive_feature: customer_state
+
+# --- Rastreamento de experimentos (MLflow) ---------------------------------
+# Backend SQLite (recomendado): o backend de arquivo (file:./mlruns) entrou em
+# modo de manutenção nas versões recentes do MLflow. Os artefatos continuam em
+# ./mlruns; apenas os metadados de tracking passam para o banco mlflow.db.
+mlflow:
+  experiment_name: previsao-churn-explicavel
+  tracking_uri: sqlite:///mlflow.db
+  registered_model_name: churn-lightgbm

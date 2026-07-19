@@ -1,0 +1,40 @@
+# =============================================================================
+# model_params.yaml — hiperparâmetros de treino e avaliação.
+# Validado por src/config/settings.py (ModelParams).
+# =============================================================================
+
+# Baseline simples (referência antes do modelo complexo).
+baseline:
+  strategy: prior   # DummyClassifier: prevê a classe majoritária / prior
+
+# Modelo principal: LightGBM (gradient boosting).
+lightgbm:
+  objective: binary
+  n_estimators: 500
+  learning_rate: 0.03
+  num_leaves: 31
+  max_depth: -1
+  min_child_samples: 40
+  subsample: 0.8
+  subsample_freq: 1
+  colsample_bytree: 0.8
+  reg_alpha: 0.1
+  reg_lambda: 0.2
+  # Lida com o desbalanceamento (churn costuma ser a classe majoritária).
+  class_weight: balanced
+  n_jobs: -1
+  verbose: -1
+
+# Avaliação.
+evaluation:
+  # Métrica principal: PR-AUC (average precision). Justificativa: base
+  # desbalanceada e o custo de negócio está em priorizar corretamente os
+  # clientes de maior risco de não recompra (ranqueamento), onde a precisão
+  # sob recall importa mais que a acurácia agregada.
+  primary_metric: average_precision
+  # Limiar de decisão para converter probabilidade em rótulo (ajustável).
+  decision_threshold: 0.5
+  # Nº de reamostragens bootstrap para intervalo de confiança das métricas.
+  bootstrap_iterations: 1000
+  # Piso da métrica principal para os testes de regressão de métrica.
+  min_primary_metric: 0.55

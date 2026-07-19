@@ -1,0 +1,29 @@
+# =============================================================================
+# paths.yaml — caminhos de dados, modelos e saídas (relativos à raiz do projeto).
+# Resolvidos em src/config/paths.py com pathlib.Path.
+# =============================================================================
+
+data:
+  raw: data/raw
+  interim: data/interim
+  processed: data/processed
+
+# Arquivos-chave gerados pela pipeline (dentro de data/processed).
+processed_files:
+  features: data/processed/churn_features.parquet
+  train: data/processed/train.parquet
+  test: data/processed/test.parquet
+
+models:
+  dir: models
+  model_file: models/churn_lightgbm.joblib
+  metadata_file: models/churn_lightgbm_meta.json
+
+reports:
+  dir: reports
+  figures: reports/figures
+  metrics: reports/metrics.json
+  model_cards: reports/model_cards
+  datasheets: reports/datasheets
+
+logs: logs

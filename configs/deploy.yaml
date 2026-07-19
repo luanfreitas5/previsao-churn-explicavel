@@ -1,0 +1,13 @@
+# =============================================================================
+# deploy.yaml — configurações do dashboard Streamlit de explicabilidade.
+# =============================================================================
+
+app:
+  title: "Previsão de Churn Explicável — Olist"
+  # Nº de features exibidas nos gráficos de contribuição SHAP.
+  top_n_features: 12
+  # Faixas de risco para segmentar clientes (limiares sobre a probabilidade).
+  risk_bands:
+    baixo: 0.33
+    medio: 0.66
+    alto: 1.01

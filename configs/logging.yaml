@@ -1,0 +1,12 @@
+# =============================================================================
+# logging.yaml — configuração de logging (console rich + arquivo rotativo).
+# Consumido por src/config/logging.py.
+# =============================================================================
+
+level: INFO          # nível global (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+console: true        # habilita o RichHandler no console
+file: true           # habilita o handler de arquivo
+log_dir: logs        # diretório dos arquivos de log
+# Formato do arquivo de log (mensagens em pt-BR).
+file_format: "%(asctime)s \t %(levelname)s \t %(name)s \t %(message)s"
+date_format: "%Y-%m-%d %H:%M:%S"
