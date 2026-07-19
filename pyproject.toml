@@ -47,7 +47,7 @@ dependencies = [
     "matplotlib>=3.9",
     "plotly>=6.0",
     # Dashboarding
-    "streamlit>=1.30",
+    "streamlit>=1.59.2",
     # Modelagem
     "scikit-learn>=1.5",
     "lightgbm>=4.3",
@@ -81,7 +81,7 @@ torchaudio = { index = "pytorch-cu129" }
 [project.optional-dependencies]
 # Dashboard interativo de explicabilidade (Streamlit + Plotly)
 app = [
-    "streamlit>=1.36",
+    "streamlit>=1.59.2",
     "plotly>=5.22",
 ]
 
