@@ -22,8 +22,8 @@ jobs:
     name: Lint & Format
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v7
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v6
         with:
           enable-cache: true
           cache-dependency-glob: "uv.lock"
@@ -36,8 +36,8 @@ jobs:
     name: Type Check (basedPyright)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v7
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v6
         with:
           enable-cache: true
           cache-dependency-glob: "uv.lock"
@@ -49,8 +49,8 @@ jobs:
     name: Security (bandit + pip-audit)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v7
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v6
         with:
           enable-cache: true
           cache-dependency-glob: "uv.lock"
@@ -63,8 +63,8 @@ jobs:
     name: Dead code, complexity & docstrings
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v7
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v6
         with:
           enable-cache: true
           cache-dependency-glob: "uv.lock"
