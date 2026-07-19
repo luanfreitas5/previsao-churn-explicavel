@@ -51,7 +51,7 @@ dependencies = [
     "scikit-learn>=1.5",
     "lightgbm>=4.3",
     # Explicabilidade (núcleo do projeto)
-    "shap>=0.52.0",
+    "shap>=0.48.0",
     # Auditoria de justiça (disparidade por UF do cliente)
     "fairlearn>=0.10",
     # Rastreamento de experimentos
