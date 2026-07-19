@@ -52,8 +52,6 @@ class MLflowTracker:
     def __exit__(
         self,
         exc_type: type[BaseException] | None,
-        exc_value: BaseException | None,
-        traceback: TracebackType | None,
     ) -> None:
         """Encerra o run do MLflow, registrando o status."""
         status = "FAILED" if exc_type is not None else "FINISHED"
