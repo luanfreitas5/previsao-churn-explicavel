@@ -109,7 +109,7 @@ def bootstrap_metric(
         # Ignora reamostras com uma única classe (métrica indefinida).
         if len(np.unique(y_true[idx])) < 2:
             continue
-        scores.append(float(metric_fn(y_true[idx], y_proba[idx])))
+        scores.append(metric_fn(y_true[idx], y_proba[idx]))
 
     scores_arr = np.asarray(scores)
     return {

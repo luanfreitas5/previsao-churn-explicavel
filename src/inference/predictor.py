@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import operator
 from typing import cast
 
 import numpy as np
@@ -74,7 +75,7 @@ def score_customers(
     scored = features.copy()
     scored["churn_proba"] = proba
 
-    edges = sorted(bands.items(), key=lambda item: item[1])
+    edges = sorted(bands.items(), key=operator.itemgetter(1))
     labels = [name for name, _ in edges]
     thresholds = [0.0, *[value for _, value in edges]]
     scored["risk_band"] = pd.cut(

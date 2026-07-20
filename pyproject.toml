@@ -202,7 +202,7 @@ exclude = ["notebooks/"]
 # REFURB — sugestões de modernização
 # =============================================================================
 [tool.refurb]
-ignore = []
+ignore = ["FURB184"]
 
 # =============================================================================
 # PYTEST — testes (unit, integração, property-based, comportamentais)
