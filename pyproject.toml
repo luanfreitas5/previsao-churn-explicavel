@@ -45,8 +45,6 @@ dependencies = [
     # Visualização
     "seaborn>=0.13",
     "matplotlib>=3.9",
-    # Dashboarding
-    "streamlit>=1.59.2",
     # Modelagem
     "scikit-learn>=1.5",
     "lightgbm>=4.3",
@@ -94,8 +92,7 @@ dev = [
     "basedpyright>=1.13",           # Um type checker estático para Python, baseado no Pyright da Microsoft - substitui mypy
     # Segurança (roda no CI)
     "bandit>=1.7",                  # Um analisador de segurança para código Python
-    "safety>=3.2",                  # Um verificador de segurança para dependências Python
-    "pip-audit>=2.7",               # Um auditor de segurança para dependências Python
+    "pip-audit>=2.7",               # Um auditor de segurança para dependências Python (substitui o safety, que arrastava nltk vulnerável)
     "detect-secrets>=1.5",          # Um detector de segredos em código Python
     # Qualidade / complexidade / docstrings
     "vulture>=2.11",                # Um verificador de código morto para Python

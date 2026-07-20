@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import cast
 
 import pandas as pd
 import polars as pl
@@ -54,6 +55,7 @@ def to_pandas_xy(df: pl.DataFrame) -> tuple[pd.DataFrame, pd.Series]:
         Par ``(X, y)`` onde ``X`` contém ``defaults.FEATURES`` e ``y`` é o alvo.
     """
     pdf = df.to_pandas()
-    x = pdf[defaults.FEATURES].copy()
-    y = pdf[defaults.TARGET].astype(int)
+    # Indexação por lista devolve DataFrame; por rótulo único, Series.
+    x = cast("pd.DataFrame", pdf[defaults.FEATURES]).copy()
+    y = cast("pd.Series", pdf[defaults.TARGET]).astype(int)
     return x, y

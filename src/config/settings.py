@@ -180,4 +180,4 @@ def load_settings(configs_dir: Path | None = None) -> Settings:
     general = _read_yaml(directory / "config.yaml")
     model = _read_yaml(directory / "model_params.yaml")
 
-    return Settings(**general, model=model)
+    return Settings(**general, model=ModelParams(**model))

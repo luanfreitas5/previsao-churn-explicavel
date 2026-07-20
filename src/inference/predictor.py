@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from typing import cast
 
 import numpy as np
 import pandas as pd
@@ -66,7 +67,8 @@ def score_customers(
     >>> score_customers(model, features_df)  # doctest: +SKIP
     """
     bands = risk_bands or {"baixo": 0.33, "medio": 0.66, "alto": 1.01}
-    x = features[defaults.FEATURES]
+    # Indexação por lista de colunas devolve sempre um DataFrame.
+    x = cast("pd.DataFrame", features[defaults.FEATURES])
     proba = predict_proba(pipeline, x)
 
     scored = features.copy()

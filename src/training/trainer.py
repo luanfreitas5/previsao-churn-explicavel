@@ -7,6 +7,7 @@ A validação cruzada fornece uma estimativa de desempenho com incerteza (média
 from __future__ import annotations
 
 import logging
+from typing import TypedDict
 
 import numpy as np
 import pandas as pd
@@ -17,6 +18,27 @@ from sklearn.pipeline import Pipeline
 logger = logging.getLogger(__name__)
 
 
+class CrossValidationResult(TypedDict):
+    """Resultado da validação cruzada de um pipeline.
+
+    Attributes
+    ----------
+    mean : float
+        Média da métrica entre os folds.
+    std : float
+        Desvio padrão da métrica entre os folds.
+    ci95 : float
+        Semi-amplitude do intervalo de confiança de 95% da média.
+    scores : list of float
+        Métrica obtida em cada fold.
+    """
+
+    mean: float
+    std: float
+    ci95: float
+    scores: list[float]
+
+
 def cross_validate_model(
     pipeline: Pipeline,
     x: pd.DataFrame,
@@ -24,7 +46,7 @@ def cross_validate_model(
     n_splits: int = 5,
     scoring: str = "average_precision",
     seed: int = 42,
-) -> dict[str, float | list[float]]:
+) -> CrossValidationResult:
     """Executa validação cruzada estratificada e retorna métrica com incerteza.
 
     Parameters
@@ -45,7 +67,7 @@ def cross_validate_model(
 
     Returns
     -------
-    dict
+    CrossValidationResult
         Chaves ``mean``, ``std``, ``ci95`` e ``scores`` (por fold).
 
     Examples

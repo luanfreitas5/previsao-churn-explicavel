@@ -7,6 +7,7 @@ recall e taxa de seleção por UF para expor disparidades no Model Card.
 from __future__ import annotations
 
 import logging
+from typing import cast
 
 import numpy as np
 import pandas as pd
@@ -44,14 +45,17 @@ def audit_fairness(
     """
     frame = MetricFrame(
         metrics={
-            "recall": lambda yt, yp: recall_score(yt, yp, zero_division=0),
+            # ``zero_division`` aceita 0/1/np.nan, mas o sklearn declara o
+            # parâmetro com o default "warn", o que o type checker lê como str.
+            "recall": lambda yt, yp: recall_score(yt, yp, zero_division=0),  # pyright: ignore[reportArgumentType]
             "selection_rate": selection_rate,
         },
         y_true=y_true,
         y_pred=y_pred,
         sensitive_features=sensitive_feature,
     )
-    by_group = frame.by_group
+    # Com múltiplas métricas, ``by_group`` é sempre um DataFrame (uma coluna por métrica).
+    by_group = cast("pd.DataFrame", frame.by_group)
     disparity = float(by_group["recall"].max() - by_group["recall"].min())
     logger.info("Disparidade de recall entre UFs = %.3f", disparity)
     return by_group

@@ -51,12 +51,14 @@ def evaluate_classification(
     {'roc_auc': 1.0, ...}
     """
     y_pred = (y_proba >= threshold).astype(int)
+    # ``zero_division`` aceita 0/1/np.nan, mas o sklearn declara o parâmetro com
+    # o default "warn", o que o type checker lê como str — daí os ignores abaixo.
     return {
         "roc_auc": float(roc_auc_score(y_true, y_proba)),
         "average_precision": float(average_precision_score(y_true, y_proba)),
-        "f1": float(f1_score(y_true, y_pred, zero_division=0)),
-        "precision": float(precision_score(y_true, y_pred, zero_division=0)),
-        "recall": float(recall_score(y_true, y_pred, zero_division=0)),
+        "f1": float(f1_score(y_true, y_pred, zero_division=0)),  # pyright: ignore[reportArgumentType]
+        "precision": float(precision_score(y_true, y_pred, zero_division=0)),  # pyright: ignore[reportArgumentType]
+        "recall": float(recall_score(y_true, y_pred, zero_division=0)),  # pyright: ignore[reportArgumentType]
         "brier": float(brier_score_loss(y_true, y_proba)),
     }
 

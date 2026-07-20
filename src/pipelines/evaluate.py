@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 import logging
+from typing import cast
+
+import pandas as pd
 
 from src.config.paths import ProjectPaths
 from src.config.settings import Settings
@@ -58,7 +61,9 @@ def run_evaluate(settings: Settings, paths: ProjectPaths) -> dict:
         seed=settings.project.random_seed,
     )
     calibration = compute_calibration(y_true, y_proba)
-    fairness = audit_fairness(y_true, y_pred, x_test[c.CUSTOMER_STATE])
+    # Indexação por rótulo único devolve Series (atributo sensível: UF do cliente).
+    sensitive = cast("pd.Series", x_test[c.CUSTOMER_STATE])
+    fairness = audit_fairness(y_true, y_pred, sensitive)
 
     plot_precision_recall(y_true, y_proba, paths.figures_dir)
     plot_calibration_curve(calibration["prob_true"], calibration["prob_pred"], paths.figures_dir)

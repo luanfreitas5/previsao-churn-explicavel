@@ -12,6 +12,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from matplotlib.figure import Figure
 from numpy.typing import NDArray
 from sklearn.metrics import PrecisionRecallDisplay
 
@@ -20,7 +21,7 @@ from src.visualization.theme import CHURN_PALETTE, apply_theme
 logger = logging.getLogger(__name__)
 
 
-def _save(fig: plt.Figure, figures_dir: Path, name: str) -> None:
+def _save(fig: Figure, figures_dir: Path, name: str) -> None:
     """Salva uma figura em PNG (300 dpi) e SVG.
 
     Parameters

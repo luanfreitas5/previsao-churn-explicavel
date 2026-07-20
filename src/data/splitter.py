@@ -66,8 +66,8 @@ def split_train_test(
     logger.info(
         "Divisão treino/teste: treino=%d (%.1f%% churn), teste=%d (%.1f%% churn)",
         train.height,
-        100 * train[defaults.TARGET].mean(),
+        100 * float(train[defaults.TARGET].to_numpy().mean()),
         test.height,
-        100 * test[defaults.TARGET].mean(),
+        100 * float(test[defaults.TARGET].to_numpy().mean()),
     )
     return train, test

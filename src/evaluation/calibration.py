@@ -8,6 +8,7 @@ prevista de 0,7 corresponde a ~70% de churn observado.
 from __future__ import annotations
 
 import logging
+from typing import TypedDict
 
 import numpy as np
 from numpy.typing import NDArray
@@ -17,11 +18,29 @@ from sklearn.metrics import brier_score_loss
 logger = logging.getLogger(__name__)
 
 
+class CalibrationResult(TypedDict):
+    """Resultado da avaliação de calibração.
+
+    Attributes
+    ----------
+    brier : float
+        Brier score (quanto menor, melhor).
+    prob_true : list of float
+        Frequência observada de churn por faixa.
+    prob_pred : list of float
+        Probabilidade média prevista por faixa.
+    """
+
+    brier: float
+    prob_true: list[float]
+    prob_pred: list[float]
+
+
 def compute_calibration(
     y_true: NDArray[np.int_],
     y_proba: NDArray[np.float64],
     n_bins: int = 10,
-) -> dict[str, list[float] | float]:
+) -> CalibrationResult:
     """Calcula o Brier score e a curva de confiabilidade.
 
     Parameters
@@ -35,7 +54,7 @@ def compute_calibration(
 
     Returns
     -------
-    dict
+    CalibrationResult
         Chaves ``brier`` (float), ``prob_true`` e ``prob_pred`` (listas com a
         curva de confiabilidade).
 

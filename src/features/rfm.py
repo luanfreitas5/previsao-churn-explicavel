@@ -235,6 +235,6 @@ def build_churn_features(
     logger.info(
         "Base de features construída: %d clientes, taxa de churn = %.1f%%",
         result.height,
-        100 * result[c.TARGET].mean(),
+        100 * float(result[c.TARGET].to_numpy().mean()),
     )
     return result
