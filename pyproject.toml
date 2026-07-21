@@ -115,10 +115,10 @@ dev = [
     "mkdocstrings[python]>=0.25",   # Um plugin para MkDocs que gera documentação a partir de docstrings
     # Profiling (use sob demanda)
     "scalene>=1.5",                 # Um profiler de performance para Python
-    # "memray>=1.13",                 # Um utilitário para análise de uso de memória em Python
     # Ferramentas para rodar Data Wrangler no Vscode
     "pip>=26.1.2",                  # Um gerenciador de pacotes para Python
     "ipykernel>=7.3.0",             # Um kernel para Jupyter que executa código Python
+    "ipywidgets>=8.1.8"             # Um conjunto de widgets interativos para Jupyter
 ]
 
 [build-system]
@@ -145,31 +145,41 @@ src = ["src", "tests"]
 
 [tool.ruff.lint]
 select = [
-    "E", "W",   # pycodestyle
-    "F",        # pyflakes
-    "I",        # isort
-    "N",        # pep8-naming
-    "D",        # pydocstyle (docstrings)
-    "UP",       # pyupgrade
-    "B",        # flake8-bugbear
-    "C4",       # comprehensions
-    "SIM",      # simplify
-    "PTH",      # use pathlib (proíbe paths hardcoded em string)
-    "PD",       # pandas-vet
-    "NPY",      # numpy
-    "RUF",      # regras do ruff
+    "E",      # pycodestyle errors
+    "W",      # pycodestyle warnings
+    "F",      # pyflakes
+    "I",      # isort (organização de imports)
+    "N",      # pep8-naming
+    "UP",     # pyupgrade (sintaxe moderna)
+    "B",      # flake8-bugbear (bugs comuns e más práticas)
+    "C4",     # flake8-comprehensions
+    "SIM",    # flake8-simplify
+    "RET",    # flake8-return
+    "ARG",    # flake8-unused-arguments
+    "PTH",    # flake8-use-pathlib (usar Path em vez de os.path)
+    "PD",     # pandas-vet — antipadrões específicos de pandas
+    "NPY",    # NumPy-specific rules
+    "PERF",   # perflint — antipadrões de performance
+    "RUF",    # regras específicas do próprio Ruff
+    "PL",     # pylint (subconjunto)
+    "TRY",    # tryceratops — boas práticas de exception handling
 ]
 ignore = [
-    "COM812",   # conflita com o formatter
-    "ISC001",   # conflita com o formatter
+    "PD901",   # variável genérica chamada "df" — comum e aceitável em notebooks/scripts
+    "PLR0913", # muitos argumentos em função — comum em pipelines de ML
+    "PLR2004", # "magic value" em comparação — comum em thresholds de modelo
+    "TRY003",  # mensagem longa em exceção customizada
 ]
+
+[tool.ruff.lint.isort]
+known-first-party = ["src"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "numpy"  # docstrings no formato NumPy
 
 [tool.ruff.lint.per-file-ignores]
-"tests/*" = ["D"]      # testes não exigem docstrings completas
-"notebooks/*" = ["D", "E402"]
+"tests/*" = ["ARG", "PLR2004"]        # fixtures e valores fixos em testes
+"notebooks/*" = ["E402", "F401"]      # imports fora de ordem/não usados em notebooks
 
 [tool.ruff.format]
 docstring-code-format = true
@@ -202,7 +212,11 @@ exclude = ["notebooks/"]
 # REFURB — sugestões de modernização
 # =============================================================================
 [tool.refurb]
-ignore = ["FURB184"]
+# Códigos ignorados: ajuste conforme o estilo do projeto
+ignore = [
+    "FURB105",  # print() sem parênteses vazios — inofensivo, pode ignorar
+    "FURB126",  # return implícito — às vezes reduz clareza em funções longas
+]
 
 # =============================================================================
 # PYTEST — testes (unit, integração, property-based, comportamentais)
