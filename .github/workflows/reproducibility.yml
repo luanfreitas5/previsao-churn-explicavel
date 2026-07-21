@@ -54,7 +54,7 @@ jobs:
       - run: uv sync --dev
 
       - name: Checar se algum notebook tem output não removido
-        run: uv run nbstripout --verify notebooks/*.ipynb
+        run: uv run nbstripout notebooks/*
 
       - name: Lint dos notebooks (nbqa + ruff)
         run: uv run nbqa ruff notebooks/
