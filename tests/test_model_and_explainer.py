@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import pytest
+
 from src.constants import defaults
 from src.explainability.shap_explainer import ChurnExplainer
 from src.inference.predictor import predict_proba, score_customers

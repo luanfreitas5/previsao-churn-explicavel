@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+from datetime import datetime
+
 import pytest
 from pydantic import ValidationError
+
 from src.config.settings import ChurnDefinition, LightGBMParams, load_settings
 
 
@@ -19,7 +22,7 @@ def test_invalid_horizon_is_rejected():
     """Horizonte não positivo é rejeitado na validação."""
     with pytest.raises(ValidationError):
         ChurnDefinition(
-            cutoff_date="2018-03-01",
+            cutoff_date=datetime.strptime("2018-03-01", "%Y-%m-%d"),
             horizon_days=0,
             valid_order_statuses=["delivered"],
         )

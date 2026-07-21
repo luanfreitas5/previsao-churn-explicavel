@@ -8,6 +8,7 @@ e o versionamento adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/)
 ## [Não lançado]
 
 ### Adicionado
+
 - Estrutura inicial do projeto (configs, `src/`, `app/`, `tests/`, docs).
 - Engenharia de features RFM e rotulagem de churn (não recompra) sem vazamento.
 - Contrato de dados `pandera` para a base de features.
@@ -20,6 +21,7 @@ e o versionamento adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/)
 ## [0.1.0] - 2026-07-04
 
 ### Adicionado
+
 - Definição do escopo do projeto e configuração de ferramentas de qualidade.
 
 [Não lançado]: https://github.com/luanfreitas5/previsao-churn-explicavel/compare/v0.1.0...HEAD

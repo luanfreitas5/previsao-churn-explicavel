@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import polars as pl
+
 from src.config.settings import ChurnDefinition
 from src.constants import columns as c
 from src.features.rfm import build_churn_features

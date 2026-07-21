@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import random
 from pathlib import Path
 
 import pytest
+
 from src.config.environment import hash_file, seed_everything
 from src.data.loader import load_olist_tables
 from src.exceptions import DataNotFoundError
@@ -40,7 +42,6 @@ def test_hash_missing_file_raises(tmp_path: Path):
 
 def test_seed_everything_is_reproducible():
     """seed_everything torna a geração aleatória reprodutível."""
-    import random
 
     seed_everything(123)
     first = [random.random() for _ in range(3)]

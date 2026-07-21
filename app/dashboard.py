@@ -18,7 +18,9 @@ import plotly.express as px
 import plotly.graph_objects as go
 import polars as pl
 import streamlit as st
-from src.config.paths import get_paths
+import yaml
+
+from src.config.paths import CONFIGS_DIR, get_paths
 from src.config.settings import load_settings
 from src.constants import columns as c
 from src.constants import defaults
@@ -198,8 +200,6 @@ def settings_top_n() -> int:
     int
         Número de contribuições SHAP a exibir (padrão 12).
     """
-    import yaml
-    from src.config.paths import CONFIGS_DIR
 
     deploy_yaml = CONFIGS_DIR / "deploy.yaml"
     if not deploy_yaml.exists():

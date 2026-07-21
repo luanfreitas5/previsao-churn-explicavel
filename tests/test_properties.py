@@ -5,6 +5,7 @@ from __future__ import annotations
 import numpy as np
 from hypothesis import given, settings
 from hypothesis import strategies as st
+
 from src.evaluation.metrics import evaluate_classification
 
 

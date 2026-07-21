@@ -6,6 +6,7 @@ from pathlib import Path
 
 import mlflow
 import pytest
+
 from src.config.settings import MLflowConfig
 from src.exceptions import ModelNotTrainedError
 from src.experiment.tracker import MLflowTracker

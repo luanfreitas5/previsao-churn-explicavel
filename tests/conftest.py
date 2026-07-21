@@ -13,6 +13,7 @@ import pandas as pd
 import polars as pl
 import pytest
 from sklearn.pipeline import Pipeline
+
 from src.config.settings import ChurnDefinition, LightGBMParams
 from src.constants import defaults
 from src.models.pipeline import build_model

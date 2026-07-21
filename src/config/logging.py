@@ -15,7 +15,7 @@ from rich.logging import RichHandler
 
 from src.config.paths import CONFIGS_DIR, ROOT
 
-_CONFIGURED = False
+_STATE: dict[str, bool] = {"configured": False}
 
 
 def configure_logging(logging_yaml: Path | None = None) -> logging.Logger:
@@ -38,9 +38,8 @@ def configure_logging(logging_yaml: Path | None = None) -> logging.Logger:
     >>> logger = configure_logging()
     >>> logger.info("Pipeline iniciada")  # doctest: +SKIP
     """
-    global _CONFIGURED
     root_logger = logging.getLogger()
-    if _CONFIGURED:
+    if _STATE["configured"]:
         return root_logger
 
     yaml_path = logging_yaml or (CONFIGS_DIR / "logging.yaml")
@@ -72,7 +71,7 @@ def configure_logging(logging_yaml: Path | None = None) -> logging.Logger:
     for handler in handlers:
         root_logger.addHandler(handler)
 
-    _CONFIGURED = True
+    _STATE["configured"] = True
     return root_logger
 
 

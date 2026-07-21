@@ -84,7 +84,7 @@ def run_stage(stage: str) -> None:
     if stage in ("evaluate", "all"):
         run_evaluate(settings, paths)
     if stage in ("explain", "all"):
-        run_explain(settings, paths)
+        run_explain(paths)
 
 
 def main() -> None:

@@ -76,7 +76,7 @@ def validate_features(df: pl.DataFrame) -> pl.DataFrame:
         # falharam; incluímos um resumo na mensagem para não depender só do log.
         failure_cases = getattr(exc, "failure_cases", None)
         detalhe = str(failure_cases) if failure_cases is not None else str(exc)
-        logger.error("Falha na validação do contrato de features:\n%s", detalhe)
+        logger.exception("Falha na validação do contrato de features:\n%s", detalhe)
         raise DataValidationError(
             f"A base de features violou o contrato de dados (ChurnFeaturesSchema):\n{detalhe}"
         ) from exc

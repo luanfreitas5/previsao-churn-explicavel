@@ -16,6 +16,7 @@ import numpy as np
 import pandas as pd
 import polars as pl
 import pytest
+
 from src.config.paths import ProjectPaths
 from src.config.settings import load_settings
 from src.exceptions import DataNotFoundError
@@ -86,7 +87,9 @@ def _write_raw_olist(raw_dir: Path, n_customers: int = 240, seed: int = 42) -> N
         "order_delivered_customer_date",
         "order_estimated_delivery_date",
     ):
-        orders_df[col] = orders_df[col].map(lambda d: d.strftime(_DT_FORMAT))
+        orders_df[col] = orders_df[col].map(
+            lambda d: d.strftime(_DT_FORMAT) if pd.notna(d) else None
+        )
     orders_df.to_csv(raw_dir / "olist_orders_dataset.csv", index=False)
 
     pd.DataFrame(customers, columns=["customer_id", "customer_unique_id", "customer_state"]).to_csv(
@@ -173,7 +176,7 @@ def test_end_to_end_pipeline(tmp_path: Path, pipeline_settings) -> None:
     assert 0.0 <= report["churn_rate_test"] <= 1.0
 
     # 4) Explicabilidade global SHAP.
-    run_explain(pipeline_settings, paths)
+    run_explain(paths)
     assert (paths.figures_dir / "shap_importance.png").exists()
     assert (paths.reports_dir / "shap_global_importance.json").exists()
 

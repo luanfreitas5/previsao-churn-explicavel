@@ -78,6 +78,9 @@ def build_baseline(params: BaselineParams, seed: int = 42) -> Pipeline:
     sklearn.pipeline.Pipeline
         Pipeline ``preprocess -> dummy`` não treinado.
     """
+    if params.strategy not in ("prior", "stratified", "most_frequent", "uniform"):
+        raise ValueError(f"Estratégia inválida para baseline: {params.strategy}")
+
     dummy = DummyClassifier(strategy=params.strategy, random_state=seed)
     return Pipeline([("preprocess", build_preprocessor()), ("model", dummy)])
 

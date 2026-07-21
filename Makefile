@@ -53,8 +53,8 @@ check:  ## Checa formatação com ruff
 format:  ## Formata o código com ruff
 	$(UV) run ruff format .
 
-lint:  ## Lint com ruff
-	$(UV) run ruff format --check .
+lint: ## Lint com ruff
+	$(UV) run ruff check --fix .
 
 typecheck:  ## Type checking estático (basedPyright)
 	$(UV) run basedpyright

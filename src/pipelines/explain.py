@@ -5,7 +5,6 @@ from __future__ import annotations
 import logging
 
 from src.config.paths import ProjectPaths
-from src.config.settings import Settings
 from src.explainability.shap_explainer import ChurnExplainer
 from src.models.persistence import load_model
 from src.pipelines.common import load_frame, to_pandas_xy
@@ -15,7 +14,7 @@ from src.visualization.plots import plot_shap_importance
 logger = logging.getLogger(__name__)
 
 
-def run_explain(settings: Settings, paths: ProjectPaths) -> None:
+def run_explain(paths: ProjectPaths) -> None:
     """Gera a importância global SHAP e salva figura e tabela.
 
     Parameters

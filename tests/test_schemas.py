@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import polars as pl
 import pytest
+
 from src.exceptions import DataValidationError
 from src.schemas.features import validate_features
 

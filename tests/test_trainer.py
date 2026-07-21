@@ -5,6 +5,7 @@ from __future__ import annotations
 import pandas as pd
 import pytest
 from sklearn.pipeline import Pipeline
+
 from src.config.settings import LightGBMParams
 from src.models.pipeline import build_model
 from src.training.trainer import cross_validate_model, fit_model

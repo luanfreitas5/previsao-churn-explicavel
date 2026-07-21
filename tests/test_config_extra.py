@@ -7,6 +7,7 @@ from pathlib import Path
 
 import pytest
 import yaml
+
 from src.config import logging as log_config
 from src.config.paths import ProjectPaths, get_paths
 
@@ -17,12 +18,12 @@ def reset_logging():
     root = logging.getLogger()
     original_handlers = root.handlers[:]
     original_level = root.level
-    log_config._CONFIGURED = False
+    log_config._STATE["configured"] = False
     root.handlers = []
     yield
     root.handlers = original_handlers
     root.setLevel(original_level)
-    log_config._CONFIGURED = False
+    log_config._STATE["configured"] = False
 
 
 def test_configure_logging_adds_handlers(tmp_path: Path, reset_logging) -> None:

@@ -5,6 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import matplotlib
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
@@ -26,7 +27,6 @@ def test_palette_has_expected_keys() -> None:
 
 def test_apply_theme_sets_dpi() -> None:
     """Aplicar o tema define o DPI de figura e de salvamento."""
-    import matplotlib.pyplot as plt
 
     apply_theme()
     assert plt.rcParams["figure.dpi"] == 120

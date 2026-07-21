@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import pytest
+
 from src.constants import defaults
 from src.data.splitter import split_train_test
 
