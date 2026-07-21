@@ -1,7 +1,7 @@
 # =============================================================================
-# Docs — constrói e publica a documentação (MkDocs Material) no GitHub Pages.
-# Usa `mkdocs gh-deploy` (branch gh-pages). Configure Pages para servir a
-# partir do branch gh-pages nas settings do repositório.
+# Docs — valida o build da documentação (MkDocs Material) em todo PR e
+# publica no GitHub Pages via `mkdocs gh-deploy` a cada push em main.
+# Configure Pages para servir a partir do branch gh-pages nas settings.
 # =============================================================================
 name: Docs
 
@@ -12,19 +12,44 @@ on:
       - "docs/**"
       - "src/**"
       - "mkdocs.yml"
+  pull_request:
+    paths:
+      - "docs/**"
+      - "src/**"
+      - "mkdocs.yml"
   workflow_dispatch:
-
-permissions:
-  contents: write   # necessário para o gh-deploy publicar no branch gh-pages
 
 concurrency:
   group: docs-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  build-deploy:
-    name: Build & Deploy
+  build:
+    name: Validar build (--strict)
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+          python-version: "3.12"
+
+      - run: uv sync --dev
+
+      - name: Build estrito (falha em link quebrado / warning)
+        run: uv run mkdocs build --strict
+
+  deploy:
+    name: Build & Deploy
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # necessário para o gh-deploy publicar no branch gh-pages
     steps:
       - uses: actions/checkout@v7
         with:
