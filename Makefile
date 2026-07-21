@@ -5,7 +5,7 @@ RUN := $(UV) run python src/main.py    # 'src' vira raiz do path ao rodar o scri
 
 .DEFAULT_GOAL := help
 .PHONY: help init venv install install-all install-models hooks update-hooks update lock export \
-	check format lint typecheck security deadcode complexity docstrings quality \
+	check format lint typecheck security deadcode complexity docstrings refurb quality \
 	test smoke precommit docs docs-serve docs-deploy profile clean cache jupyter notebook add remove tree \
 	clean-processed clean-reports clean-outputs features train evaluate explain pipeline app
 
@@ -72,7 +72,10 @@ complexity:  ## Limites de complexidade (xenon)
 docstrings:  ## Cobertura de docstrings (interrogate)
 	$(UV) run interrogate -v src
 
-quality: format lint typecheck security deadcode complexity docstrings  ## Roda toda a suíte de qualidade (espelha o CI)
+refurb:  ## Detecta código redundante (refurb)
+	$(UV) run refurb src
+
+quality: format lint typecheck security deadcode complexity docstrings refurb   ## Roda toda a suíte de qualidade (espelha o CI)
 
 # --- Testes ----------------------------------------------------------------
 test:  ## Roda os testes com cobertura

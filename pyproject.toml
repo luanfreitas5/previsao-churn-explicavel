@@ -165,7 +165,6 @@ select = [
     "TRY",    # tryceratops — boas práticas de exception handling
 ]
 ignore = [
-    "PD901",   # variável genérica chamada "df" — comum e aceitável em notebooks/scripts
     "PLR0913", # muitos argumentos em função — comum em pipelines de ML
     "PLR2004", # "magic value" em comparação — comum em thresholds de modelo
     "TRY003",  # mensagem longa em exceção customizada

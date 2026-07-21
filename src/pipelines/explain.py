@@ -33,8 +33,7 @@ def run_explain(settings: Settings, paths: ProjectPaths) -> None:
     test_df = load_frame(paths.test_file)
     x_test, _ = to_pandas_xy(test_df)
 
-    explainer = ChurnExplainer(model)
-    importances = explainer.explain_global(x_test)
+    importances = ChurnExplainer(model).explain_global(x_test)
 
     plot_shap_importance(importances, paths.figures_dir)
     write_json(

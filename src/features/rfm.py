@@ -89,20 +89,6 @@ def _build_customer_features(
     """
     ordered = past_orders.sort(c.ORDER_PURCHASE_TIMESTAMP)
 
-    features = ordered.group_by(c.CUSTOMER_UNIQUE_ID).agg(
-        # UF do último pedido observado (estado mais recente do cliente).
-        pl.col(c.CUSTOMER_STATE).last().alias(c.CUSTOMER_STATE),
-        pl.col(c.ORDER_PURCHASE_TIMESTAMP).max().alias("last_purchase"),
-        pl.col(c.ORDER_PURCHASE_TIMESTAMP).min().alias("first_purchase"),
-        pl.col(c.ORDER_ID).n_unique().alias(c.FREQUENCY),
-        pl.col("payment_value_sum").sum().alias(c.MONETARY),
-        pl.col("installments_mean").mean().alias(c.AVG_INSTALLMENTS),
-        pl.col("freight_sum").mean().alias(c.AVG_FREIGHT),
-        pl.col("review_score_mean").mean().alias(c.AVG_REVIEW_SCORE),
-        pl.col("delivery_days").mean().alias(c.AVG_DELIVERY_DAYS),
-        pl.col("is_late").mean().fill_null(0.0).alias(c.LATE_DELIVERY_RATE),
-    )
-
     # Produtos distintos por cliente (via itens dos pedidos anteriores ao corte).
     past_ids = past_orders.select(c.ORDER_ID, c.CUSTOMER_UNIQUE_ID)
     distinct_products = (
@@ -111,20 +97,35 @@ def _build_customer_features(
         .agg(pl.col(c.PRODUCT_ID).n_unique().alias(c.DISTINCT_PRODUCTS))
     )
 
-    features = features.join(distinct_products, on=c.CUSTOMER_UNIQUE_ID, how="left")
-
     # Deriva recência, tenure e ticket médio a partir das agregações.
-    return features.with_columns(
-        (pl.lit(cutoff) - pl.col("last_purchase"))
-        .dt.total_days()
-        .cast(pl.Float64)
-        .alias(c.RECENCY_DAYS),
-        (pl.lit(cutoff) - pl.col("first_purchase"))
-        .dt.total_days()
-        .cast(pl.Float64)
-        .alias(c.TENURE_DAYS),
-        (pl.col(c.MONETARY) / pl.col(c.FREQUENCY)).alias(c.MONETARY_MEAN),
-        pl.col(c.DISTINCT_PRODUCTS).fill_null(1),
+    return (
+        ordered.group_by(c.CUSTOMER_UNIQUE_ID)
+        .agg(
+            # UF do último pedido observado (estado mais recente do cliente).
+            pl.col(c.CUSTOMER_STATE).last().alias(c.CUSTOMER_STATE),
+            pl.col(c.ORDER_PURCHASE_TIMESTAMP).max().alias("last_purchase"),
+            pl.col(c.ORDER_PURCHASE_TIMESTAMP).min().alias("first_purchase"),
+            pl.col(c.ORDER_ID).n_unique().alias(c.FREQUENCY),
+            pl.col("payment_value_sum").sum().alias(c.MONETARY),
+            pl.col("installments_mean").mean().alias(c.AVG_INSTALLMENTS),
+            pl.col("freight_sum").mean().alias(c.AVG_FREIGHT),
+            pl.col("review_score_mean").mean().alias(c.AVG_REVIEW_SCORE),
+            pl.col("delivery_days").mean().alias(c.AVG_DELIVERY_DAYS),
+            pl.col("is_late").mean().fill_null(0.0).alias(c.LATE_DELIVERY_RATE),
+        )
+        .join(distinct_products, on=c.CUSTOMER_UNIQUE_ID, how="left")
+        .with_columns(
+            (pl.lit(cutoff) - pl.col("last_purchase"))
+            .dt.total_days()
+            .cast(pl.Float64)
+            .alias(c.RECENCY_DAYS),
+            (pl.lit(cutoff) - pl.col("first_purchase"))
+            .dt.total_days()
+            .cast(pl.Float64)
+            .alias(c.TENURE_DAYS),
+            (pl.col(c.MONETARY) / pl.col(c.FREQUENCY)).alias(c.MONETARY_MEAN),
+            pl.col(c.DISTINCT_PRODUCTS).fill_null(1),
+        )
     )
 
 
@@ -211,25 +212,25 @@ def build_churn_features(
         .with_columns(pl.lit(0, dtype=pl.Int64).alias(c.TARGET))
     )
 
-    features = features.join(future_customers, on=c.CUSTOMER_UNIQUE_ID, how="left").with_columns(
-        pl.col(c.TARGET).fill_null(1)
-    )
-
-    result = features.select(
-        c.CUSTOMER_KEY,
-        c.RECENCY_DAYS,
-        c.FREQUENCY,
-        c.MONETARY,
-        c.MONETARY_MEAN,
-        c.TENURE_DAYS,
-        c.AVG_FREIGHT,
-        c.AVG_REVIEW_SCORE,
-        c.AVG_INSTALLMENTS,
-        c.DISTINCT_PRODUCTS,
-        c.AVG_DELIVERY_DAYS,
-        c.LATE_DELIVERY_RATE,
-        c.CUSTOMER_STATE,
-        c.TARGET,
+    result = (
+        features.join(future_customers, on=c.CUSTOMER_UNIQUE_ID, how="left")
+        .with_columns(pl.col(c.TARGET).fill_null(1))
+        .select(
+            c.CUSTOMER_KEY,
+            c.RECENCY_DAYS,
+            c.FREQUENCY,
+            c.MONETARY,
+            c.MONETARY_MEAN,
+            c.TENURE_DAYS,
+            c.AVG_FREIGHT,
+            c.AVG_REVIEW_SCORE,
+            c.AVG_INSTALLMENTS,
+            c.DISTINCT_PRODUCTS,
+            c.AVG_DELIVERY_DAYS,
+            c.LATE_DELIVERY_RATE,
+            c.CUSTOMER_STATE,
+            c.TARGET,
+        )
     )
 
     logger.info(
