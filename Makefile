@@ -7,7 +7,7 @@ RUN := $(UV) run python src/main.py    # 'src' vira raiz do path ao rodar o scri
 .PHONY: help init venv install install-all install-models hooks update-hooks update lock export \
 	check format lint typecheck security deadcode complexity docstrings refurb quality \
 	test smoke precommit docs docs-serve docs-deploy profile clean cache jupyter notebook add remove tree \
-	clean-processed clean-reports clean-outputs features train evaluate explain pipeline app
+	clean-processed clean-reports clean-outputs clean-notebooks features train evaluate explain pipeline app
 
 help:  ## Lista os alvos disponíveis
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -95,6 +95,9 @@ clean-reports:  ## Remove os relatórios gerados (pastas por modelo + comparaç�
 	find reports -mindepth 1 -maxdepth 1 -type d -exec rm -rf {} +
 
 clean-outputs: clean-processed clean-reports  ## Remove todas as saídas do pipeline
+
+clean-notebooks:  ## Remove os notebooks com células vazias
+	$(UV) run nbstripout notebooks
 
 # --- Documentação ----------------------------------------------------------
 docs:  ## Constrói a documentação (modo estrito)

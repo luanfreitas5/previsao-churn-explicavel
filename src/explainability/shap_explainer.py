@@ -62,7 +62,7 @@ def _humanize(feature_name: str, value: object) -> tuple[str, str]:
         uf = feature_name.split("_", 2)[-1]
         return "UF do cliente", uf
     label = defaults.FEATURE_LABELS_PT.get(feature_name, feature_name)
-    formatted = f"{value:.2f}" if isinstance(value, (int, float, np.floating)) else str(value)
+    formatted = f"{value:.2f}" if isinstance(value, int | float | np.floating) else str(value)
     return label, formatted
 
 

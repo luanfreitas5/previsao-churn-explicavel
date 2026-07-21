@@ -58,7 +58,7 @@ repos:
     hooks:
       - id: pytest-smoke
         name: pytest (smoke)
-        entry: uv run pytest -m smoke -q
+        entry: uv run pytest -m smoke -q --no-cov
         language: system
         pass_filenames: false
         stages: [pre-commit]
