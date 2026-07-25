@@ -29,17 +29,6 @@ install-all:  ## Instala tudo (todos os extras + dev)
 install-models:  ## Instala os extras dos modelos Hugging Face (torch + transformers)
 	$(UV) sync --extra models --dev
 
-hooks:  ## Instala os hooks do pre-commit
-	$(UV) run pre-commit install
-	$(UV) run pre-commit install --hook-type commit-msg
-	$(UV) run detect-secrets scan > .secrets.baseline
-
-pre-commit:  ## Roda todos os hooks do pre-commit em todos os arquivos
-	$(UV) run pre-commit run --all-files
-
-update-hooks:  ## Atualiza os hooks do pre-commit
-	$(UV) run pre-commit autoupdate
-
 update:  ## Atualiza todas as dependências e sincroniza
 	$(UV) lock --upgrade
 	$(UV) sync --all-groups
@@ -88,8 +77,21 @@ test:  ## Roda os testes com cobertura
 smoke:  ## Roda apenas os smoke tests
 	$(UV) run pytest -m smoke -q
 
-precommit:  ## Roda todos os hooks do pre-commit em todos os arquivos
+hooks:  ## Instala os hooks do pre-commit
+	$(UV) run pre-commit install
+	$(UV) run pre-commit install --hook-type commit-msg
+	$(UV) run detect-secrets scan > .secrets.baseline
+
+pre-commit:  ## Roda todos os hooks do pre-commit em todos os arquivos
 	$(UV) run pre-commit run --all-files
+
+update-hooks:  ## Atualiza os hooks do pre-commit
+	$(UV) run pre-commit autoupdate
+
+update-version:
+	$(UV) add --dev commitizen
+	$(UV) run cz changelog
+	$(UV) run cz bump --changelog --yes
 
 # --- Limpeza de saídas do pipeline ------------------------------------------
 clean-processed:  ## Remove os artefatos de dados processados

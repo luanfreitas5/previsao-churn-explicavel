@@ -12,7 +12,7 @@ on:
     inputs:
       increment:
         description: "Forçar o tipo de bump (vazio = detecção automática pelos commits)"
-        required: false
+        required: true
         type: choice
         options: ["", "PATCH", "MINOR", "MAJOR"]
         default: ""

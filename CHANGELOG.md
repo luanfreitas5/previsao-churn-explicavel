@@ -1,7 +1,9 @@
-## v0.2.0 (2026-07-25)
+## v0.6.0 (2026-07-25)
 
 ### Feat
 
+- atualiza configuração do Commitizen para versão e changelog
+- atualiza versões do Python no workflow de testes
 - adiciona workflows de CI para revisão de dependências e reprodutibilidade
 - adiciona configuração do pre-commit para checagens automáticas
 - implementa pipeline de previsão de churn
@@ -17,6 +19,11 @@
 
 ### Fix
 
+- ajusta configuração do Commitizen para formatação de tag
+- atualiza versão do Commitizen para 0.1.0
+- ajusta configuração do Commitizen no pyproject.toml
+- adiciona regra para ignorar muitos parâmetros em funções
+- atualiza versões de dependências no pre-commit e ajusta Makefile
 - atualiza dependência gitpython para >=3.1.51 Adiciona restrições em dependências transitivas por segurança e atualiza a versão do gitpython para 3.1.53.
 - adiciona .gitattributes para normalização de LF
 - ajusta comando do pytest e adiciona limpeza de notebooks
