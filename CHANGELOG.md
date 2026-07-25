@@ -1,28 +1,34 @@
-# Changelog
+## v0.2.0 (2026-07-25)
 
-Todas as mudanças relevantes deste projeto são documentadas aqui.
+### Feat
 
-O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/)
-e o versionamento adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
+- adiciona workflows de CI para revisão de dependências e reprodutibilidade
+- adiciona configuração do pre-commit para checagens automáticas
+- implementa pipeline de previsão de churn
+- adiciona testes para a pipeline de churn
+- adiciona notebooks de EDA e modelagem com LightGBM Inclui análise exploratória e avaliação de modelo com explicabilidade SHAP.
+- adiciona dashboard Streamlit para previsão de churn
+- adiciona arquivos de configuração e documentação do projeto
+- adiciona configuração do devcontainer e CI/CD
+- adiciona Dockerfile e docker-compose.yml para orquestração do projeto
+- adiciona arquivos de configuração e documentação do projeto
+- adiciona arquivo pyproject.toml com configuração do projeto
+- adiciona arquivos .gitignore e LICENSE
 
-## [Não lançado]
+### Fix
 
-### Adicionado
-
-- Estrutura inicial do projeto (configs, `src/`, `app/`, `tests/`, docs).
-- Engenharia de features RFM e rotulagem de churn (não recompra) sem vazamento.
-- Contrato de dados `pandera` para a base de features.
-- Pipeline de modelagem LightGBM com baseline, validação cruzada e MLflow.
-- Avaliação rigorosa: PR-AUC com IC bootstrap, calibração e justiça por UF.
-- Explicabilidade SHAP global e por cliente em linguagem de negócio.
-- Dashboard Streamlit de risco de churn e explicações.
-- Suíte de testes (unitários, property-based e comportamentais de ML).
-
-## [0.1.0] - 2026-07-04
-
-### Adicionado
-
-- Definição do escopo do projeto e configuração de ferramentas de qualidade.
-
-[Não lançado]: https://github.com/luanfreitas5/previsao-churn-explicavel/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/luanfreitas5/previsao-churn-explicavel/releases/tag/v0.1.0
+- atualiza dependência gitpython para >=3.1.51 Adiciona restrições em dependências transitivas por segurança e atualiza a versão do gitpython para 3.1.53.
+- adiciona .gitattributes para normalização de LF
+- ajusta comando do pytest e adiciona limpeza de notebooks
+- ajusta verificação de outputs em notebooks e formatação
+- ajusta formatação e importações em diversos arquivos
+- ajusta Makefile e refatora código em rfm.py e explain.py
+- atualiza nome do kernel e adiciona informações de linguagem
+- ajusta ignorados no refurb e corrige ordenação de bandas de risco
+- ajusta tipos de retorno e conversões em várias funções
+- corrige parâmetros do método __exit__ no MLflowTracker
+- remove parâmetros não utilizados no método __exit__
+- pin shap dependency to a version compatible with py3.10-3.12
+- atualiza a versão do Plotly para 6.9.0
+- remove plotly da lista de dependências
+- substitui np.random.seed por rng.default_rng

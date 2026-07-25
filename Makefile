@@ -32,7 +32,7 @@ install-models:  ## Instala os extras dos modelos Hugging Face (torch + transfor
 hooks:  ## Instala os hooks do pre-commit
 	$(UV) run pre-commit install
 	$(UV) run pre-commit install --hook-type commit-msg
-	$(UV) run detect-secrets scan | Out-File -Encoding utf8 .secrets.baseline
+	$(UV) run detect-secrets scan > .secrets.baseline
 
 pre-commit:  ## Roda todos os hooks do pre-commit em todos os arquivos
 	$(UV) run pre-commit run --all-files

@@ -6,10 +6,10 @@
 
 [project]
 name = "previsao-churn-explicavel"
-version = "0.1.0"
+version = "0.2.0"
 description = "Previsão de churn (não recompra) de clientes Olist com RFM, LightGBM e explicabilidade via SHAP."
 readme = "README.md"
-requires-python = ">=3.10, <3.14"
+requires-python = ">=3.10"
 license = { text = "MIT" }
 authors = [{ name = "Luan Freitas", email = "luan.mgf@gmail.com" }]
 keywords = ["churn", "shap", "lightgbm", "rfm", "explainable-ai", "olist"]
@@ -63,10 +63,13 @@ required-environments = [
     "sys_platform == 'win32' and platform_machine == 'AMD64'",
     "sys_platform == 'linux' and platform_machine == 'x86_64'",
 ]
-# Restrições em dependências transitivas por segurança (pip-audit).
+# Restrições em dependências transitivas por segurança (pip-audit) e build.
 # gitpython < 3.1.51 (puxado pelo mlflow) tem 2 CVEs corrigidos na 3.1.51:
 # GHSA-2f96-g7mh-g2hx e GHSA-v396-v7q4-x2qj.
-constraint-dependencies = ["gitpython>=3.1.51"]
+# numba < 0.61 (puxado pelo shap) não declara requires-python compatível com
+# Python 3.11+ nos metadados, mas falha o build em tempo de setup.py nessas
+# versões — forçamos um piso que já publica wheels para cp310-cp314.
+constraint-dependencies = ["gitpython>=3.1.51", "numba>=0.61"]
 
 [[tool.uv.index]]
 name = "pytorch-cu129"
