@@ -4,9 +4,9 @@ UV := uv
 RUN := $(UV) run python src/main.py    # 'src' vira raiz do path ao rodar o script
 
 .DEFAULT_GOAL := help
-.PHONY: help init venv install install-all install-models hooks pre-commit update-hooks update lock export \
+.PHONY: help init venv install install-all install-models  update lock export \
 	check format lint typecheck security deadcode complexity docstrings refurb quality \
-	test smoke precommit docs docs-serve docs-deploy profile clean cache jupyter notebook add remove tree \
+	test smoke hooks pre-commit update-hooks update-version docs docs-serve docs-deploy profile clean cache jupyter notebook add remove tree \
 	clean-processed clean-reports clean-outputs clean-notebooks features train evaluate explain pipeline app
 
 help:  ## Lista os alvos disponíveis
