@@ -7,7 +7,7 @@ paths
 settings
     Carrega e valida as configurações YAML + ``.env`` com Pydantic.
 logging
-    Configura logging com ``RichHandler`` e arquivo rotativo diário.
+    Configura logging via ``dictConfig`` (console rich + arquivo rotativo diário).
 environment
     Fixa sementes de aleatoriedade e calcula hashes de arquivos.
 """

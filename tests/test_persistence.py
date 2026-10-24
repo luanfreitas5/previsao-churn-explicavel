@@ -72,3 +72,48 @@ def test_mlflow_tracker_sets_failed_status_on_exception(tmp_path: Path) -> None:
     with pytest.raises(ValueError), MLflowTracker(config) as tracker:
         tracker.log_metrics({"m": 1.0})
         raise ValueError("falha simulada")
+
+
+def test_mlflow_tracker_logs_one_child_run_per_fold(tmp_path: Path) -> None:
+    """Cada fold vira uma run filha com as tags de linhagem; o pai guarda média e desvio."""
+    config = _sqlite_config(tmp_path)
+    tags = {"git_sha": "abc", "data_hash": "def", "seed": "42"}
+
+    with MLflowTracker(config, run_name="modelo", tags=tags) as tracker:
+        tracker.log_cv_folds("average_precision", [0.6, 0.62, 0.64])
+
+    runs = mlflow.search_runs(experiment_names=[config.experiment_name])
+    children = runs[runs["tags.mlflow.parentRunId"].notna()]
+    assert len(children) == 3
+    assert set(children["tags.git_sha"]) == {"abc"}
+    parent = runs[runs["tags.mlflow.parentRunId"].isna()].iloc[0]
+    assert parent["metrics.cv_average_precision_mean"] == pytest.approx(0.62)
+    assert parent["metrics.cv_average_precision_std"] == pytest.approx(0.02)
+
+
+def test_mlflow_tracker_logs_model_with_signature(tmp_path: Path, trained_model) -> None:
+    """O modelo final é registrado com assinatura inferida da amostra de entrada."""
+    model, x_test, _ = trained_model
+    config = _sqlite_config(tmp_path)
+
+    with MLflowTracker(config, run_name="modelo") as tracker:
+        tracker.log_model(model, x_test)
+
+    runs = mlflow.search_runs(experiment_names=[config.experiment_name])
+    assert len(runs) == 1
+
+
+def test_compute_git_sha_refuses_dirty_tree(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Com alterações não commitadas, o SHA só é aceito se a árvore limpa não for exigida."""
+    import subprocess
+
+    from src.experiment.tracker import compute_git_sha
+
+    def fake_run(cmd, **_kwargs):
+        stdout = " M arquivo.py\n" if "status" in cmd else "a1b2c3\n"
+        return subprocess.CompletedProcess(cmd, 0, stdout=stdout)
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+    with pytest.raises(RuntimeError, match="Árvore Git suja"):
+        compute_git_sha(require_clean_tree=True)
+    assert compute_git_sha(require_clean_tree=False) == "a1b2c3"

@@ -51,3 +51,5 @@ mlflow:
   experiment_name: previsao-churn-explicavel
   tracking_uri: sqlite:///mlflow.db
   registered_model_name: churn-lightgbm
+  # Recusa registrar runs com árvore Git suja (o SHA não descreveria o código).
+  require_clean_tree: true

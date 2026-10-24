@@ -62,7 +62,7 @@ def hash_file(path: Path, chunk_size: int = 1 << 20) -> str:
 
     Examples
     --------
-    >>> hash_file(Path("data/raw/olist_orders_dataset.csv"))  # doctest: +SKIP
+    >>> hash_file(Path("data/bronze/olist_orders_dataset.csv"))  # doctest: +SKIP
     '3a7bd3e2360a...'
     """
     path = Path(path)

@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 from src.config.environment import hash_file
 from src.config.paths import ProjectPaths
 from src.config.settings import Settings
-from src.experiment.tracker import MLflowTracker
+from src.experiment.tracker import MLflowTracker, build_lineage_tags
 from src.models.persistence import save_model
 from src.models.pipeline import build_baseline, build_model
 from src.pipelines.common import load_frame, to_pandas_xy
@@ -57,6 +57,16 @@ def run_train(settings: Settings, paths: ProjectPaths) -> None:
         model_cv["mean"],
     )
 
+    tags = build_lineage_tags(
+        paths.train_file, seed, require_clean_tree=settings.mlflow.require_clean_tree
+    )
+
+    # Um run pai por modelo, com um run filho aninhado por fold.
+    with MLflowTracker(settings.mlflow, run_name="baseline", tags=tags) as baseline_tracker:
+        baseline_tracker.log_params({**settings.model.baseline.model_dump(), "model": "baseline"})
+        baseline_tracker.log_cv_folds(scoring, baseline_cv["scores"])
+
+    # O modelo registrado é reajustado em todo o treino (não é o do último fold).
     model = fit_model(model, x_train, y_train)
 
     metadata = {
@@ -73,15 +83,22 @@ def run_train(settings: Settings, paths: ProjectPaths) -> None:
         },
     }
 
-    with MLflowTracker(settings.mlflow, run_name="lightgbm") as tracker:
-        tracker.log_params(settings.model.lightgbm.model_dump())
+    with MLflowTracker(settings.mlflow, run_name="lightgbm", tags=tags) as tracker:
+        tracker.log_params(
+            {
+                **settings.model.lightgbm.model_dump(),
+                "cv": "StratifiedKFold",
+                "n_splits": settings.cross_validation.n_splits,
+            }
+        )
+        tracker.log_cv_folds(scoring, model_cv["scores"])
         tracker.log_metrics(
             {
                 f"cv_{scoring}_baseline": baseline_cv["mean"],
-                f"cv_{scoring}_model": model_cv["mean"],
                 f"cv_{scoring}_ci95": model_cv["ci95"],
             }
         )
+        tracker.log_model(model, x_train)
         save_model(model, paths.model_file, metadata)
         tracker.log_artifact(paths.model_file)
 

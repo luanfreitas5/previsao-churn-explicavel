@@ -1,7 +1,8 @@
-"""Leitura dos datasets brutos da Olist como ``polars.DataFrame``.
+"""Leitura dos datasets da camada bronze da Olist como ``polars.DataFrame``.
 
-Apenas lê os dados brutos (nunca os modifica). As colunas de data/hora são
-convertidas para ``Datetime`` para permitir cálculos temporais de RFM e churn.
+Apenas lê os dados da camada bronze (nunca os modifica). As colunas de data/hora
+são convertidas para ``Datetime`` para permitir cálculos temporais de RFM e churn;
+as tabelas tipadas podem ser persistidas na camada silver (parquet).
 """
 
 from __future__ import annotations
@@ -20,7 +21,7 @@ logger = logging.getLogger(__name__)
 # Formato de data/hora usado nos CSVs da Olist.
 _DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
-# Nomes de arquivo esperados em data/raw.
+# Nomes de arquivo esperados em data/bronze.
 _FILES = {
     "orders": "olist_orders_dataset.csv",
     "customers": "olist_customers_dataset.csv",
@@ -71,12 +72,13 @@ def _read_csv(path: Path) -> pl.DataFrame:
     Raises
     ------
     DataNotFoundError
-        Se o arquivo não existir em ``data/raw``.
+        Se o arquivo não existir em ``data/bronze``.
     """
     if not path.exists():
-        logger.error("Arquivo bruto não encontrado: %s", path)
+        logger.error("Arquivo bronze não encontrado: %s", path)
         raise DataNotFoundError(
-            f"Arquivo bruto não encontrado: {path}. Baixe o dataset da Olist e extraia em data/raw."
+            f"Arquivo bronze não encontrado: {path}. "
+            "Baixe o dataset da Olist e extraia em data/bronze."
         )
     return pl.read_csv(path, infer_schema_length=10_000)
 
@@ -106,12 +108,12 @@ def _parse_datetime(df: pl.DataFrame, columns: list[str]) -> pl.DataFrame:
 
 
 def load_olist_tables(raw_dir: Path) -> OlistTables:
-    """Carrega as tabelas brutas da Olist a partir de ``data/raw``.
+    """Carrega as tabelas da Olist a partir da camada bronze (``data/bronze``).
 
     Parameters
     ----------
     raw_dir : pathlib.Path
-        Diretório com os CSVs brutos da Olist.
+        Diretório da camada bronze com os CSVs da Olist.
 
     Returns
     -------
@@ -125,12 +127,12 @@ def load_olist_tables(raw_dir: Path) -> OlistTables:
 
     Examples
     --------
-    >>> tables = load_olist_tables(Path("data/raw"))  # doctest: +SKIP
+    >>> tables = load_olist_tables(Path("data/bronze"))  # doctest: +SKIP
     >>> tables.orders.height > 0  # doctest: +SKIP
     True
     """
     raw_dir = Path(raw_dir)
-    logger.info("Carregando tabelas brutas da Olist de %s", raw_dir)
+    logger.info("Carregando tabelas bronze da Olist de %s", raw_dir)
 
     orders = _parse_datetime(
         _read_csv(raw_dir / _FILES["orders"]),
@@ -160,3 +162,36 @@ def load_olist_tables(raw_dir: Path) -> OlistTables:
         payments=payments,
         reviews=reviews,
     )
+
+
+def write_silver_tables(tables: OlistTables, silver_dir: Path) -> list[Path]:
+    """Persiste as tabelas tipadas na camada silver, em parquet.
+
+    A camada silver guarda os dados da bronze com tipos corretos (datas já
+    convertidas para ``Datetime``), sem alterar a bronze.
+
+    Parameters
+    ----------
+    tables : OlistTables
+        Tabelas carregadas e tipadas por :func:`load_olist_tables`.
+    silver_dir : pathlib.Path
+        Diretório de destino (``data/silver``).
+
+    Returns
+    -------
+    list of pathlib.Path
+        Caminhos dos arquivos parquet escritos.
+
+    Examples
+    --------
+    >>> write_silver_tables(tables, Path("data/silver"))  # doctest: +SKIP
+    """
+    silver_dir = Path(silver_dir)
+    silver_dir.mkdir(parents=True, exist_ok=True)
+    written: list[Path] = []
+    for name in _FILES:
+        target = silver_dir / f"{name}.parquet"
+        getattr(tables, name).write_parquet(target)
+        written.append(target)
+    logger.info("Camada silver atualizada: %d tabelas em %s", len(written), silver_dir)
+    return written

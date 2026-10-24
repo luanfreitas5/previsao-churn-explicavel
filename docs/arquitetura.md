@@ -16,11 +16,11 @@ uma janela temporal bem definida, evitando vazamento de futuro.
 ## Fluxo de dados
 
 ```
-data/raw (CSVs)
-  → load_olist_tables (polars)
+data/bronze (CSVs, imutável)
+  → load_olist_tables (polars) → data/silver/*.parquet (tipado)
   → build_churn_features (RFM + rotulagem)
   → validate_features (pandera)
-  → data/processed/*.parquet
+  → data/gold/*.parquet
   → split treino/teste
   → LightGBM (sklearn Pipeline: imputação + one-hot + modelo)
   → avaliação (métricas, calibração, justiça) + SHAP

@@ -1,163 +1,105 @@
-# 📉 Previsão de Churn Explicável — Olist
+# 📉 Churn explicável na Olist: ranking de risco de não recompra com LightGBM + SHAP
 
-[![CI](https://img.shields.io/badge/CI-GitHub%20Actions-2088FF?logo=githubactions&logoColor=white)](.github/workflows/ci.yml)
-[![Tests](https://img.shields.io/badge/tests-pytest-0A9EDC?logo=pytest&logoColor=white)](.github/workflows/tests.yml)
-[![Coverage](https://img.shields.io/badge/coverage-%E2%89%A580%25-brightgreen)](.github/workflows/tests.yml)
-[![Python](https://img.shields.io/badge/python-3.10%2B-3776AB?logo=python&logoColor=white)](pyproject.toml)
-[![Ruff](https://img.shields.io/badge/lint-ruff-D7FF64?logo=ruff&logoColor=black)](pyproject.toml)
-[![License: MIT](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE)
+[![CI](https://github.com/luanfreitas5/previsao-churn-explicavel/actions/workflows/ci.yml/badge.svg)](https://github.com/luanfreitas5/previsao-churn-explicavel/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/luanfreitas5/previsao-churn-explicavel/graph/badge.svg)](https://codecov.io/gh/luanfreitas5/previsao-churn-explicavel)
+[![docs](https://github.com/luanfreitas5/previsao-churn-explicavel/actions/workflows/docs.yml/badge.svg)](https://luanfreitas5.github.io/previsao-churn-explicavel/)
+[![License](https://img.shields.io/github/license/luanfreitas5/previsao-churn-explicavel)](LICENSE)
+![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13%20%7C%203.14-blue) <!-- = matriz do CI (tests.yml) -->
 
-Identifica **clientes com risco de não recomprar** no marketplace da Olist usando
-features **RFM** (recência, frequência, valor) e **gradient boosting (LightGBM)**,
-com **SHAP** para explicar cada previsão em **linguagem de negócio**. O foco é um
-caso realista, reprodutível e orientado à decisão comercial de retenção.
+> **Resultado:** o LightGBM atinge PR-AUC (*average precision*) = **0,9919 (IC 95%: 0,9897–0,9939)** no teste, contra **0,9882** do baseline `DummyClassifier` (média em CV), em 11.272 clientes da Olist — mas a prevalência de churn é 98,8%, então a PR-AUC quase não sai do piso do baseline e a **ROC-AUC é de apenas 0,62**. O modelo serve para **ranquear** clientes para retenção, não para estimar probabilidades absolutas.
 
-> **Domínio:** e-commerce · **Alvo:** churn/não recompra (binário) ·
-> **Métrica principal:** PR-AUC (average precision) · **Explicabilidade:** SHAP ·
-> **Deploy:** dashboard Streamlit.
+## 🎯 Problema
 
----
+- **Quem decide o quê:** o time de retenção escolhe quais clientes contatar primeiro em campanhas de recompra; cada previsão vem com os fatores que a explicam (SHAP) em linguagem de negócio.
+- **Custo dos erros:** falso negativo = cliente em risco que não recebe ação; falso positivo = desconto/contato desperdiçado. Como o interesse é a **ordenação** do risco, a métrica principal é a PR-AUC, lida junto com a ROC-AUC e o baseline (a PR-AUC sozinha é enganosa com 98,8% de positivos).
+- **Unidade de predição e momento `t0`:** um cliente (`customer_unique_id`) no snapshot `t0 = 2018-03-01`; todas as features usam apenas pedidos ≤ `t0`. `churn = 1` se não houver pedido em `(t0, t0 + 180 dias]` (parametrizável em [`configs/config.yaml`](configs/config.yaml)).
 
-## 🎯 Definição do problema (churn = não recompra)
+## 🗂️ Dados
 
-O dataset da Olist é transacional e a maioria dos clientes compra **uma única vez**.
-Definimos churn a partir de um **snapshot** com data de corte, evitando vazamento de
-futuro (parametrizável em [`configs/config.yaml`](configs/config.yaml)):
+| Item | Valor |
+|---|---|
+| Fonte e licença | [Brazilian E-Commerce Public Dataset by Olist (Kaggle)](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce) — CC BY-NC-SA 4.0 (uso não comercial) |
+| Tamanho / período | ~100 mil pedidos, 2016-09 a 2018-10; teste com 11.272 clientes (20%) |
+| Alvo e prevalência | churn (não recompra em 180 dias), 98,82% positivos no teste |
+| Documentação | [Datasheet](reports/datasheets/olist.md) |
 
-1. A base considera clientes com **pelo menos um pedido até** `cutoff_date`.
-2. Todas as features são calculadas **apenas com pedidos ≤ `cutoff_date`**.
-3. `churn = 1` se o cliente **não** comprar na janela
-   `(cutoff_date, cutoff_date + horizon_days]`; caso contrário `churn = 0`.
+Arquitetura medalhão em `data/` (fora do Git):
 
-> ⚠️ **Limitação conhecida:** por ser majoritariamente compra única, a base é
-> **desbalanceada** (alta taxa de churn). Por isso a métrica principal é o
-> **PR-AUC** e o modelo usa `class_weight="balanced"`. Ver o
-> [Model Card](reports/model_cards/) e a discussão de justiça por UF.
-
----
-
-## 🏗️ Arquitetura
-
-```
-CSVs Olist (data/raw)
-     │  load  (polars)
-     ▼
-build_churn_features  ──►  contrato pandera  ──►  data/processed/*.parquet
-     │  RFM + rotulagem (sem vazamento)
-     ▼
-split treino/teste  ──►  LightGBM (sklearn Pipeline)  ──►  MLflow + models/*.joblib
-     │
-     ├──►  avaliação: PR-AUC + IC bootstrap, calibração, justiça por UF
-     └──►  SHAP: importância global + explicação por cliente
-                        │
-                        ▼
-             Dashboard Streamlit (app/)
-```
-
-Pipeline por estágios (cada um lê/escreve artefatos em disco):
-
-| Estágio | Comando | Saída |
+| Camada | Pasta | Conteúdo |
 |---|---|---|
-| Features | `make features` | `data/processed/{churn_features,train,test}.parquet` |
-| Treino | `make train` | `models/churn_lightgbm.joblib` + run MLflow |
-| Avaliação | `make evaluate` | `reports/metrics.json` + figuras |
-| Explicabilidade | `make explain` | `reports/figures/shap_importance.*` |
-| Tudo | `make pipeline` | executa os quatro em sequência |
+| 🥉 bronze | `data/bronze/` | CSVs da Olist exatamente como recebidos (imutáveis) |
+| 🥈 silver | `data/silver/` | tabelas usadas, em parquet, com datas tipadas |
+| 🥇 gold | `data/gold/` | base de features RFM + alvo, validada por contrato `pandera`, e divisão treino/teste |
 
----
+## 📊 Resultados
 
-## 🚀 Começando
+Protocolo: divisão aleatória estratificada 80/20, `seed = 42`; CV estratificada de 5 folds no treino; IC do teste por **bootstrap (1000 reamostragens)** e IC do CV por 1,96·σ/√folds.
 
-### 1. Pré-requisitos
+| Modelo | PR-AUC (IC 95%) | ROC-AUC | F1 / recall (limiar 0,5) |
+|---|---|---|---|
+| Baseline: DummyClassifier (prior), CV no treino | 0,9882 | 0,5 (por construção) | — |
+| LightGBM, CV no treino (5 folds) | 0,9902 ± 0,0009 | — | — |
+| **LightGBM, teste** | **0,9919 (0,9897–0,9939)** | 0,6214 | 0,966 / 0,944 |
 
-- Python 3.10+
-- [`uv`](https://docs.astral.sh/uv/) (gerenciador de ambiente e dependências)
+- **Diferença vs baseline:** +0,0020 de PR-AUC no CV, da ordem do próprio IC do modelo. *Nenhum teste de significância foi executado ainda* — não é correto afirmar que o modelo é "melhor" sem ele (pendência registrada no [Model Card](reports/model_cards/churn_lightgbm.md)). O baseline também não foi medido no conjunto de teste.
+- **Calibração:** Brier = 0,0720; com `class_weight="balanced"` e prevalência de ~99% as probabilidades não são calibradas.
+- **Pior segmento (recall por UF):** TO = 0,865, AM = 0,882, GO = 0,916, contra SP = 0,928 e recall 1,000 em várias UFs pequenas (sem `n` por UF, a amplitude de 0,135 não é interpretável).
+- **Explicabilidade (SHAP global):** UF do cliente (0,58), dias desde a última compra (0,34), frete médio (0,28) e ticket médio (0,25) lideram a importância.
 
-### 2. Instalação
+![Importância global das features (SHAP)](reports/figures/shap_importance.png)
 
-```bash
-uv sync --dev            # runtime + dev
-uv sync --extra app      # inclui Streamlit + Plotly (dashboard)
-make hooks               # instala os hooks de pre-commit
-```
+![Curva precisão-revocação no teste](reports/figures/precision_recall.png)
 
-### 3. Dados
+Os números vêm de [`reports/metrics/metrics.json`](reports/metrics/metrics.json), [`reports/metrics/shap_global_importance.json`](reports/metrics/shap_global_importance.json) e de `models/churn_lightgbm_meta.json` (CV e hash dos dados). Outras figuras: [`reports/figures/`](reports/figures/).
 
-Baixe o [Brazilian E-Commerce Public Dataset by Olist](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce)
-e extraia os CSVs em [`data/raw/`](data/raw/) (não versionados no Git).
+## 🔁 Reproduzir
 
-### 4. Executar a pipeline
-
-```bash
-make pipeline            # features -> train -> evaluate -> explain
-make app                 # sobe o dashboard de explicabilidade
-```
-
----
-
-## 🧪 Qualidade e testes
+Requisitos: [uv](https://docs.astral.sh/uv/), `make` e o dataset da Olist baixado manualmente do Kaggle (extraia os CSVs em `data/bronze/`). Não há credenciais obrigatórias (ver `.env.example`). Tempo: `TODO(Luan)`: medir em uma máquina limpa.
 
 ```bash
-make quality             # lint, type check, segurança, complexidade, docstrings
-make test                # pytest com cobertura (meta ≥ 80%)
+git clone https://github.com/luanfreitas5/previsao-churn-explicavel.git
+cd previsao-churn-explicavel
 ```
 
-- **Contratos de dados** (`pandera`) validam a base de features na entrada/saída.
-- **Testes comportamentais de ML**: ex. aumentar a recência não reduz o risco de churn.
-- **Testes property-based** (`hypothesis`) sobre as métricas.
-- **Reprodutibilidade**: `seed_everything`, hash dos dados nos metadados do modelo.
-
----
-
-## 📊 Avaliação rigorosa
-
-Nunca reportamos uma métrica pontual isolada. O relatório inclui:
-
-- **Incerteza:** PR-AUC com intervalo de confiança 95% via bootstrap.
-- **Baseline:** comparação explícita com `DummyClassifier`.
-- **Calibração:** Brier score + curva de confiabilidade.
-- **Justiça:** disparidade de recall por **UF do cliente** (`fairlearn`).
-- **Explicabilidade:** SHAP global e por cliente, traduzido para negócio.
-
----
-
-## 🗂️ Estrutura do projeto
-
+<!-- verify:start -->
+```bash
+uv sync --locked --all-groups --extra app
+make pipeline   # features (bronze -> silver -> gold) -> train -> evaluate -> explain
 ```
-configs/        YAML validados com Pydantic
-data/           raw / interim / processed (não versionados)
-src/
-  config/       settings, paths, logging, seed
-  data/         loader (polars), splitter
-  features/     RFM + rotulagem de churn
-  schemas/      contratos pandera
-  models/       pipeline LightGBM + persistência
-  training/     validação cruzada + fit
-  evaluation/   métricas, calibração, justiça
-  explainability/  SHAP em linguagem de negócio
-  inference/    pontuação e faixas de risco
-  visualization/   tema + gráficos
-  pipelines/    estágios ponta a ponta
-  main.py       CLI (argparse)
-app/            dashboard Streamlit
-tests/          unit, property-based, comportamentais
-reports/        métricas, figuras, model cards, datasheets
-docs/           documentação MkDocs
-```
+<!-- verify:end -->
 
----
+Saída esperada: `average_precision` no teste ≈ 0,9919 (IC 95%: 0,9897–0,9939) em `reports/metrics/metrics.json`. Ambiente que gerou os números publicados: `TODO(Luan)`: registrar a versão do Python e o commit do `uv.lock`. O `train` recusa árvore Git suja (`mlflow.require_clean_tree` em `configs/config.yaml`) para que cada run do MLflow carregue `git_sha`, `data_hash` e `seed`.
 
-## 📚 Documentação
+Outros alvos úteis:
 
 ```bash
-make docs-serve          # http://127.0.0.1:8000
+make app        # dashboard Streamlit de explicabilidade
+make check      # lint + tipos + segurança + qualidade + testes (espelha o CI)
+make docker-up  # dashboard + MLflow em containers (modelo e data/gold montados do host)
 ```
 
-A referência de API é gerada automaticamente a partir das docstrings (NumPy, pt-BR)
-com **MkDocs Material** + **mkdocstrings**.
+## 🧱 Estrutura
 
----
+```
+configs/      YAML validados com Pydantic (config, paths, logging, model_params, deploy)
+data/         bronze / silver / gold (fora do Git)
+src/          config, data, features (RFM + churn), schemas (pandera), models,
+              training, evaluation, explainability (SHAP), experiment (MLflow), pipelines
+app/          dashboard Streamlit
+reports/      metrics/ (JSON), figures/, model_cards/, datasheets/
+docker/       Dockerfile do servidor MLflow (o do dashboard está na raiz)
+tests/        unitários, property-based e comportamentais
+```
 
-## 📄 Licença
+## ⚠️ Limitações
 
-Distribuído sob a licença [MIT](LICENSE).
+- **Prevalência de ~99%:** quase todo cliente da Olist compra uma única vez; a PR-AUC é inflada pela prevalência e a ROC-AUC (0,62) mostra poder discriminativo modesto.
+- **Sem significância nem baseline no teste:** a vantagem sobre o baseline é pequena e não foi testada estatisticamente.
+- **Avaliação interna apenas:** divisão aleatória de um único snapshot (`2018-03-01`); sem validação temporal ou externa. Dados de 2016–2018 podem não refletir o comportamento atual.
+- **Justiça por UF incompleta:** UF é feature e atributo sensível; faltam `n` e IC por UF e métricas de paridade (`fairlearn`).
+- **Limiar de decisão** padrão de 0,5, não otimizado pelo custo de FP vs FN.
+- **Linhagem:** o modelo atual foi treinado antes das tags `git_sha`/`data_hash` no MLflow; retreine com `make train` para gerá-las.
+
+## 📄 Licença e citação
+
+MIT — ver [LICENSE](LICENSE). Os dados de origem seguem a licença CC BY-NC-SA 4.0 do dataset. Documentação completa (MkDocs Material + mkdocstrings): `make docs-serve`.

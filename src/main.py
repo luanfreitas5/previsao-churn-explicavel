@@ -5,11 +5,11 @@ pipeline completa:
 
 .. code-block:: bash
 
-    python -m src.main features   # constrói e valida a base de features
-    python -m src.main train      # treina o modelo (CV + MLflow)
-    python -m src.main evaluate   # avalia (métricas, calibração, justiça)
-    python -m src.main explain    # explicabilidade global (SHAP)
-    python -m src.main all        # executa tudo em sequência
+    python -m src.main --stage features   # constrói e valida a base de features
+    python -m src.main --stage train      # treina o modelo (CV + MLflow)
+    python -m src.main --stage evaluate   # avalia (métricas, calibração, justiça)
+    python -m src.main --stage explain    # explicabilidade global (SHAP)
+    python -m src.main --stage all        # executa tudo em sequência
 """
 
 from __future__ import annotations
@@ -50,6 +50,12 @@ def build_parser() -> argparse.ArgumentParser:
         choices=_STAGES,
         help="Estágio da pipeline a executar.",
     )
+    parser.add_argument(
+        "--log-level",
+        choices=("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"),
+        default=None,
+        help="Sobrescreve o nível de log de configs/logging.yaml.",
+    )
     return parser
 
 
@@ -70,7 +76,6 @@ def run_stage(stage: str) -> None:
     --------
     >>> run_stage("features")  # doctest: +SKIP
     """
-    configure_logging()
     settings = load_settings()
     paths = get_paths()
     seed_everything(settings.project.random_seed)
@@ -90,6 +95,7 @@ def run_stage(stage: str) -> None:
 def main() -> None:
     """Ponto de entrada da CLI da pipeline de churn."""
     args = build_parser().parse_args()
+    configure_logging(level=args.log_level)  # única configuração de logging do processo
     run_stage(args.stage)
 
 

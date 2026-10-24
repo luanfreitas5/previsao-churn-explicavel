@@ -6,7 +6,7 @@ import logging
 
 from src.config.paths import ProjectPaths
 from src.config.settings import Settings
-from src.data.loader import load_olist_tables
+from src.data.loader import load_olist_tables, write_silver_tables
 from src.data.splitter import split_train_test
 from src.features.rfm import build_churn_features
 from src.schemas.features import validate_features
@@ -17,9 +17,10 @@ logger = logging.getLogger(__name__)
 def run_build_features(settings: Settings, paths: ProjectPaths) -> None:
     """Constrói, valida e persiste a base de features + divisão treino/teste.
 
-    Lê os CSVs brutos da Olist, gera a base RFM + alvo de churn, valida contra o
-    contrato de dados e escreve ``churn_features.parquet``, ``train.parquet`` e
-    ``test.parquet`` em ``data/processed``.
+    Lê os CSVs da camada bronze, grava as tabelas tipadas na silver, gera a base
+    RFM + alvo de churn, valida contra o contrato de dados e escreve
+    ``churn_features.parquet``, ``train.parquet`` e ``test.parquet`` em
+    ``data/gold``.
 
     Parameters
     ----------
@@ -33,7 +34,8 @@ def run_build_features(settings: Settings, paths: ProjectPaths) -> None:
     >>> run_build_features(settings, paths)  # doctest: +SKIP
     """
     paths.ensure_dirs()
-    tables = load_olist_tables(paths.data_raw)
+    tables = load_olist_tables(paths.data_bronze)
+    write_silver_tables(tables, paths.data_silver)
 
     features = build_churn_features(
         orders=tables.orders,

@@ -50,8 +50,10 @@ class MLflowConfig(BaseModel):
     """Configuração do rastreamento de experimentos MLflow."""
 
     experiment_name: str = "previsao-churn-explicavel"
-    tracking_uri: str = "file:./mlruns"
+    tracking_uri: str = "sqlite:///mlflow.db"
     registered_model_name: str = "churn-lightgbm"
+    require_clean_tree: bool = True  # recusa registrar run com alterações não commitadas
+    require_clean_tree: bool = True  # recusa registrar run com alterações não commitadas
 
 
 class ProjectConfig(BaseModel):

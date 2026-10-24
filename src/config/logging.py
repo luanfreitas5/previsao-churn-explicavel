@@ -1,94 +1,113 @@
-"""Configura o logging do projeto com ``RichHandler`` e arquivo rotativo diário.
+"""Configuração única de logging: console ``rich`` + arquivo com rotação diária.
 
-Todas as mensagens de log são emitidas em pt-BR. A configuração é lida de
-``configs/logging.yaml`` e aplicada uma única vez por processo.
+A configuração vem de ``configs/logging.yaml`` (formato ``dictConfig``) e é
+aplicada **uma única vez**, no ponto de entrada (``main``). Os demais módulos
+apenas fazem ``logger = logging.getLogger(__name__)``. Todas as mensagens de log
+são emitidas em pt-BR e nunca contêm linhas de dados (apenas metadados).
 """
 
 from __future__ import annotations
 
 import logging
-from datetime import date
+import logging.config
+from logging.handlers import TimedRotatingFileHandler
 from pathlib import Path
+from typing import Any
 
 import yaml
+from rich.console import Console
 from rich.logging import RichHandler
 
 from src.config.paths import CONFIGS_DIR, ROOT
 
-_STATE: dict[str, bool] = {"configured": False}
+# Console compartilhado por RichHandler e rich.progress: logs saem acima da barra.
+CONSOLE = Console(stderr=True)
 
 
-def configure_logging(logging_yaml: Path | None = None) -> logging.Logger:
-    """Configura os handlers de console (rich) e arquivo do projeto.
-
-    Idempotente: chamadas subsequentes não duplicam handlers.
-
-    Parameters
-    ----------
-    logging_yaml : pathlib.Path or None, optional
-        Caminho do YAML de logging. Se ``None``, usa ``configs/logging.yaml``.
+def create_console_handler() -> RichHandler:
+    """Cria o handler de console ligado ao console compartilhado.
 
     Returns
     -------
-    logging.Logger
-        Logger raiz configurado.
+    RichHandler
+        Handler que escreve no mesmo ``Console`` usado pelas barras de progresso.
+    """
+    return RichHandler(console=CONSOLE, rich_tracebacks=True, show_path=True, markup=False)
+
+
+def _rename_rotated(default_name: str) -> str:
+    """Converte ``logs/log.log.2026-09-27`` em ``logs/log_2026-09-27.log``.
+
+    Parameters
+    ----------
+    default_name : str
+        Nome padrão gerado pelo ``TimedRotatingFileHandler``.
+
+    Returns
+    -------
+    str
+        Nome final do arquivo rotacionado.
+    """
+    path = Path(default_name)
+    stem, date_str = path.name.split(".log.")
+    return str(path.with_name(f"{stem}_{date_str}.log"))
+
+
+def create_daily_file_handler(filename: str, backup_count: int = 30) -> TimedRotatingFileHandler:
+    """Cria o handler de arquivo com rotação diária à meia-noite.
+
+    Parameters
+    ----------
+    filename : str
+        Caminho do arquivo ativo, relativo à raiz do projeto.
+    backup_count : int, optional
+        Quantidade de arquivos diários mantidos, by default 30.
+
+    Returns
+    -------
+    TimedRotatingFileHandler
+        Handler que rotaciona para ``log_YYYY-MM-DD.log``.
 
     Examples
     --------
-    >>> logger = configure_logging()
-    >>> logger.info("Pipeline iniciada")  # doctest: +SKIP
+    >>> handler = create_daily_file_handler("logs/log.log")  # doctest: +SKIP
     """
-    root_logger = logging.getLogger()
-    if _STATE["configured"]:
-        return root_logger
-
-    yaml_path = logging_yaml or (CONFIGS_DIR / "logging.yaml")
-    cfg = _load_config(yaml_path)
-
-    level = getattr(logging, str(cfg.get("level", "INFO")).upper(), logging.INFO)
-    root_logger.setLevel(level)
-
-    handlers: list[logging.Handler] = []
-
-    if cfg.get("console", True):
-        rich_handler = RichHandler(rich_tracebacks=True, show_path=True, markup=True)
-        rich_handler.setFormatter(logging.Formatter("%(name)s \t %(message)s"))
-        handlers.append(rich_handler)
-
-    if cfg.get("file", True):
-        log_dir = ROOT / cfg.get("log_dir", "logs")
-        log_dir.mkdir(parents=True, exist_ok=True)
-        log_file = log_dir / f"log_{date.today():%Y-%m-%d}.log"
-        file_handler = logging.FileHandler(log_file, encoding="utf-8")
-        file_handler.setFormatter(
-            logging.Formatter(
-                cfg.get("file_format", "%(asctime)s \t %(levelname)s \t %(name)s \t %(message)s"),
-                datefmt=cfg.get("date_format", "%Y-%m-%d %H:%M:%S"),
-            )
-        )
-        handlers.append(file_handler)
-
-    for handler in handlers:
-        root_logger.addHandler(handler)
-
-    _STATE["configured"] = True
-    return root_logger
+    path = ROOT / filename
+    path.parent.mkdir(parents=True, exist_ok=True)  # dictConfig falha se o diretório não existe
+    handler = TimedRotatingFileHandler(
+        path, when="midnight", backupCount=backup_count, encoding="utf-8"
+    )
+    handler.namer = _rename_rotated
+    return handler
 
 
-def _load_config(yaml_path: Path) -> dict:
-    """Lê o YAML de logging, retornando padrões seguros se ausente.
+def configure_logging(level: str | None = None, config_path: Path | None = None) -> None:
+    """Aplica a configuração de logging do YAML. Chamar apenas no ponto de entrada.
 
     Parameters
     ----------
-    yaml_path : pathlib.Path
-        Caminho do YAML de logging.
+    level : str or None, optional
+        Sobrescreve o nível do root (ex.: ``--log-level DEBUG``), by default None.
+    config_path : pathlib.Path or None, optional
+        YAML no formato ``dictConfig``. Se ``None``, usa ``configs/logging.yaml``.
 
-    Returns
-    -------
-    dict
-        Configuração de logging (ou padrões se o arquivo não existir).
+    Raises
+    ------
+    FileNotFoundError
+        Se o YAML não existir.
+    ValueError
+        Se o YAML ou o nível forem inválidos.
+
+    Examples
+    --------
+    >>> configure_logging(level="DEBUG")  # doctest: +SKIP
     """
+    yaml_path = config_path or (CONFIGS_DIR / "logging.yaml")
     if not yaml_path.exists():
-        return {"level": "INFO", "console": True, "file": True, "log_dir": "logs"}
-    with yaml_path.open("r", encoding="utf-8") as handle:
-        return yaml.safe_load(handle) or {}
+        raise FileNotFoundError(f"Arquivo de logging não encontrado: {yaml_path}")
+
+    config: dict[str, Any] = yaml.safe_load(yaml_path.read_text(encoding="utf-8"))
+    if level is not None:
+        config["root"]["level"] = level.upper()
+    logging.config.dictConfig(config)  # substitui os handlers do root: chamar de novo não duplica
+    logging.captureWarnings(True)  # warnings.warn() passa pelos mesmos handlers

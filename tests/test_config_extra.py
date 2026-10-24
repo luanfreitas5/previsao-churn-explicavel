@@ -14,54 +14,84 @@ from src.config.paths import ProjectPaths, get_paths
 
 @pytest.fixture
 def reset_logging():
-    """Reseta o estado global de logging antes e depois do teste."""
+    """Restaura handlers e nível do root após testes que chamam ``dictConfig``."""
     root = logging.getLogger()
     original_handlers = root.handlers[:]
     original_level = root.level
-    log_config._STATE["configured"] = False
-    root.handlers = []
     yield
     root.handlers = original_handlers
     root.setLevel(original_level)
-    log_config._STATE["configured"] = False
+    logging.captureWarnings(False)
 
 
-def test_configure_logging_adds_handlers(tmp_path: Path, reset_logging) -> None:
-    """Configurar o logging cria handlers de console e arquivo e grava o log."""
-    yaml_path = tmp_path / "logging.yaml"
-    yaml_path.write_text(
-        yaml.safe_dump({"level": "DEBUG", "console": True, "file": True, "log_dir": "logs"}),
-        encoding="utf-8",
+def _write_logging_yaml(tmp_path: Path) -> Path:
+    """Escreve um YAML ``dictConfig`` mínimo (arquivo em ``tmp_path``) para os testes."""
+    config = {
+        "version": 1,
+        "disable_existing_loggers": False,
+        "formatters": {"file": {"format": "%(levelname)s | %(message)s"}},
+        "handlers": {
+            "console": {"()": "src.config.logging.create_console_handler"},
+            "file": {
+                "()": "src.config.logging.create_daily_file_handler",
+                "filename": (tmp_path / "logs" / "log.log").as_posix(),
+                "formatter": "file",
+            },
+        },
+        "root": {"level": "INFO", "handlers": ["console", "file"]},
+    }
+    path = tmp_path / "logging.yaml"
+    path.write_text(yaml.safe_dump(config), encoding="utf-8")
+    return path
+
+
+def test_configure_logging_is_idempotent(tmp_path: Path, reset_logging) -> None:
+    """Chamar ``configure_logging`` várias vezes não duplica os handlers do root."""
+    yaml_path = _write_logging_yaml(tmp_path)
+    log_config.configure_logging(config_path=yaml_path)
+    first = len(logging.getLogger().handlers)
+    log_config.configure_logging(config_path=yaml_path)
+    assert len(logging.getLogger().handlers) == first == 2
+
+
+def test_configure_logging_level_override(tmp_path: Path, reset_logging) -> None:
+    """O argumento ``level`` sobrescreve o nível definido no YAML."""
+    yaml_path = _write_logging_yaml(tmp_path)
+    log_config.configure_logging(level="debug", config_path=yaml_path)
+    assert logging.getLogger().level == logging.DEBUG
+
+
+def test_configure_logging_missing_yaml_raises(tmp_path: Path) -> None:
+    """Um YAML de logging inexistente levanta ``FileNotFoundError``."""
+    with pytest.raises(FileNotFoundError):
+        log_config.configure_logging(config_path=tmp_path / "ausente.yaml")
+
+
+def test_project_logging_yaml_is_valid() -> None:
+    """O ``configs/logging.yaml`` do projeto segue o formato dictConfig esperado."""
+    config = yaml.safe_load(
+        (Path(__file__).resolve().parents[1] / "configs" / "logging.yaml").read_text(
+            encoding="utf-8"
+        )
     )
-    logger = log_config.configure_logging(yaml_path)
-    logger.info("mensagem de teste")
-
-    assert logger.level == logging.DEBUG
-    assert len(logger.handlers) >= 1
-    # Segunda chamada é idempotente (não duplica handlers).
-    before = len(logger.handlers)
-    log_config.configure_logging(yaml_path)
-    assert len(logger.handlers) == before
+    assert config["version"] == 1
+    assert config["disable_existing_loggers"] is False
+    assert set(config["root"]["handlers"]) == {"console", "file"}
 
 
-def test_configure_logging_missing_yaml_uses_defaults(reset_logging) -> None:
-    """Sem YAML, o logging usa padrões seguros e ainda configura o logger."""
-    logger = log_config.configure_logging(Path("nao_existe.yaml"))
-    assert logger.level == logging.INFO
-
-
-def test_load_config_missing_returns_defaults(tmp_path: Path) -> None:
-    """A leitura de um YAML inexistente retorna a configuração padrão."""
-    cfg = log_config._load_config(tmp_path / "ausente.yaml")
-    assert cfg["level"] == "INFO"
-    assert cfg["console"] is True
+def test_rename_rotated_uses_daily_pattern() -> None:
+    """Arquivos rotacionados seguem o padrão ``log_YYYY-MM-DD.log``."""
+    renamed = log_config._rename_rotated(str(Path("logs") / "log.log.2026-09-27"))
+    assert Path(renamed).name == "log_2026-09-27.log"
 
 
 def test_get_paths_from_project_configs() -> None:
     """Os caminhos padrão do projeto carregam com os nomes esperados."""
     paths = get_paths()
     assert isinstance(paths, ProjectPaths)
-    assert paths.data_raw.name == "raw"
+    assert paths.data_bronze.name == "bronze"
+    assert paths.data_silver.name == "silver"
+    assert paths.data_gold.name == "gold"
     assert paths.model_file.suffix == ".joblib"
 
 
@@ -75,8 +105,8 @@ def test_ensure_dirs_creates_output_directories(tmp_path: Path) -> None:
     """``ensure_dirs`` cria os diretórios de saída ausentes."""
     paths = ProjectPaths(
         root=tmp_path,
-        data_interim=tmp_path / "data" / "interim",
-        data_processed=tmp_path / "data" / "processed",
+        data_silver=tmp_path / "data" / "silver",
+        data_gold=tmp_path / "data" / "gold",
         models_dir=tmp_path / "models",
         reports_dir=tmp_path / "reports",
         figures_dir=tmp_path / "reports" / "figures",
@@ -85,6 +115,7 @@ def test_ensure_dirs_creates_output_directories(tmp_path: Path) -> None:
         logs_dir=tmp_path / "logs",
     )
     paths.ensure_dirs()
-    assert paths.data_processed.is_dir()
+    assert paths.data_silver.is_dir()
+    assert paths.data_gold.is_dir()
     assert paths.figures_dir.is_dir()
     assert paths.logs_dir.is_dir()

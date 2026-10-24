@@ -1,12 +1,33 @@
 # =============================================================================
-# logging.yaml — configuração de logging (console rich + arquivo rotativo).
-# Consumido por src/config/logging.py.
+# logging.yaml — configuração única de logging (formato logging.config.dictConfig).
+# Aplicada por src/config/logging.py::configure_logging(), chamada só no main.
+# Console rich + arquivo diário (logs/log_YYYY-MM-DD.log). Mensagens em pt-BR.
 # =============================================================================
+version: 1
+disable_existing_loggers: false  # true (padrão) silencia loggers criados em imports anteriores
 
-level: INFO          # nível global (DEBUG, INFO, WARNING, ERROR, CRITICAL)
-console: true        # habilita o RichHandler no console
-file: true           # habilita o handler de arquivo
-log_dir: logs        # diretório dos arquivos de log
-# Formato do arquivo de log (mensagens em pt-BR).
-file_format: "%(asctime)s \t %(levelname)s \t %(name)s \t %(message)s"
-date_format: "%Y-%m-%d %H:%M:%S"
+formatters:
+  console:
+    format: "%(name)s | %(message)s"  # RichHandler já exibe hora, nível e arquivo:linha
+  file:
+    format: "%(asctime)s \t %(levelname)s \t %(name)s \t %(message)s"
+
+handlers:
+  console:
+    "()": src.config.logging.create_console_handler
+    formatter: console
+  file:
+    "()": src.config.logging.create_daily_file_handler
+    filename: logs/log.log  # rotacionado à meia-noite para logs/log_YYYY-MM-DD.log
+    backup_count: 30
+    formatter: file
+
+loggers:  # apenas níveis de bibliotecas ruidosas; handlers ficam só no root
+  matplotlib: {level: WARNING}
+  lightgbm: {level: WARNING}
+  mlflow: {level: WARNING}
+  alembic: {level: WARNING}
+
+root:
+  level: INFO  # sobrescrito por --log-level
+  handlers: [console, file]

@@ -28,10 +28,10 @@ env/
 # .secrets.baseline é commitado (usado pelo detect-secrets) — não ignorar.
 
 # --- Dados (versionados por DVC) -------------------------------------------
-data/raw/*
+data/bronze/*
 data/external/*
-data/interim/*
-data/processed/*
+data/silver/*
+data/gold/*
 # Mantém a estrutura de pastas e os ponteiros do DVC:
 !data/**/.gitkeep
 !data/**/*.dvc
@@ -100,7 +100,5 @@ CLAUDE.local.md
 .mcp.json
 
 # --- Relatórios gerados -----------------------------------------------------
-reports/figures/
-reports/metrics.json
-reports/shap_global_importance.json
+# figuras (png/svg) e métricas JSON são commitadas: o README as referencia
 reports/monitoring/

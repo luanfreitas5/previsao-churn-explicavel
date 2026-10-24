@@ -59,6 +59,9 @@ dependencies = [
 ]
 
 [tool.uv]
+# Grupos instalados por padrão: `uv sync --dev` no CI continua trazendo tudo;
+# imagens Docker usam `--no-default-groups` (só runtime).
+default-groups = ["dev", "quality", "docs"]
 required-environments = [
     "sys_platform == 'win32' and platform_machine == 'AMD64'",
     "sys_platform == 'linux' and platform_machine == 'x86_64'",
@@ -90,42 +93,44 @@ app = [
 ]
 
 
-# --- Dependências de desenvolvimento (não publicadas; PEP 735) --------------
+# --- Grupos de dependências (PEP 735): dev + quality (CI) + docs + profiling --
 [dependency-groups]
 dev = [
     # Lint + format
-    "ruff>=0.5",                    # Um linter e formatador de código Python extremamente rápido - substitui flake8/isort/black
-    # Type checking (roda no CI, não no pre-commit)
-    "basedpyright>=1.13",           # Um type checker estático para Python, baseado no Pyright da Microsoft - substitui mypy
-    # Segurança (roda no CI)
-    "bandit>=1.7",                  # Um analisador de segurança para código Python
-    "pip-audit>=2.7",               # Um auditor de segurança para dependências Python (substitui o safety, que arrastava nltk vulnerável)
-    "detect-secrets>=1.5",          # Um detector de segredos em código Python
-    # Qualidade / complexidade / docstrings
-    "vulture>=2.11",                # Um verificador de código morto para Python
-    "refurb>=2.0",                  # Um utilitário para refatoração de código Python
-    "xenon>=0.9",                   # Um analisador de complexidade para Python
-    "radon>=6.0",                   # Um analisador de complexidade para Python
-    "interrogate>=1.7",             # Um verificador de docstrings para Python
+    "ruff>=0.5",                    # Linter e formatador extremamente rápido - substitui flake8/isort/black
+    # Type checking (roda no CI e em `make check`, não no pre-commit)
+    "basedpyright>=1.13",           # Type checker estático baseado no Pyright - substitui mypy
     # Testes
-    "pytest>=8.2",                  # Um framework de teste para Python
-    "pytest-cov>=5.0",              # Um plugin para pytest que fornece cobertura de código
-    "hypothesis>=6.100",            # Um framework de teste property-based para Python
-    # Notebooks
-    "nbqa>=1.8",                    # Um utilitário para aplicar linters a notebooks do Jupyter
-    "nbstripout>=0.7",              # Um utilitário para remover saídas e metadados de notebooks do Jupyter
+    "pytest>=8.2",                  # Framework de testes
+    "pytest-cov>=5.0",              # Cobertura de código
+    "hypothesis>=6.100",            # Testes property-based
     # Workflow
-    "pre-commit>=3.7",              # Um framework para gerenciar hooks de commit no Git
-    "commitizen>=4.16.5",             # Um utilitário para manter o histórico de commits consistente
-    # Documentação
-    "mkdocs-material>=9.7.7",         # Um tema para MkDocs
-    "mkdocstrings[python]>=0.25",   # Um plugin para MkDocs que gera documentação a partir de docstrings
-    # Profiling (use sob demanda)
-    "scalene>=1.5",                 # Um profiler de performance para Python
-    # Ferramentas para rodar Data Wrangler no Vscode
-    "pip>=26.1.2",                  # Um gerenciador de pacotes para Python
-    "ipykernel>=7.3.0",             # Um kernel para Jupyter que executa código Python             # Um conjunto de widgets interativos para Jupyter
-    "ipywidgets>=8.1.8",
+    "pre-commit>=3.7",              # Hooks de commit (apenas checagens rápidas)
+    "commitizen>=4.16.5",           # Conventional Commits + SemVer + CHANGELOG
+    "detect-secrets>=1.5",          # Detector de segredos (hook + baseline)
+    # Notebooks
+    "nbqa>=1.8",                    # Aplica linters a notebooks
+    "nbstripout>=0.7",              # Remove outputs dos notebooks antes do commit
+    "ipykernel>=7.3.0",             # Kernel do Jupyter (Data Wrangler no VSCode)
+    "ipywidgets>=8.1.8",            # Widgets interativos do Jupyter
+    "pip>=26.1.2",                  # Necessário para o Data Wrangler no VSCode
+]
+quality = [
+    # Checagens pesadas: rodam no CI e em `make check`
+    "bandit[toml]>=1.7",            # Análise de segurança do código
+    "pip-audit>=2.7",               # Auditoria de vulnerabilidades das dependências
+    "vulture>=2.11",                # Código morto
+    "refurb>=2.0",                  # Sugestões de modernização
+    "xenon>=0.9",                   # Limites de complexidade (falha o CI se excedidos)
+    "radon>=6.0",                   # Métricas de complexidade
+    "interrogate>=1.7",             # Cobertura de docstrings
+]
+docs = [
+    "mkdocs-material>=9.7.7",       # Tema do MkDocs
+    "mkdocstrings[python]>=0.25",   # API reference gerada das docstrings
+]
+profiling = [
+    "scalene>=1.5",                 # Profiler de CPU + memória (use sob demanda)
 ]
 
 [build-system]
@@ -231,13 +236,14 @@ ignore = [
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = [
+    "-ra",
     "--strict-markers",
     "--cov=src",
     "--cov-report=term-missing",
     "--cov-report=xml",
 ]
 markers = [
-    "smoke: testes rápidos rodados no pre-commit",
+    "smoke: testes rápidos (< 10 s) usados no pre-commit",
     "integration: testes de pipeline ponta a ponta",
     "ml: testes comportamentais / de regressão de métrica",
     "slow: testes lentos (pulados por padrão localmente)",
@@ -254,8 +260,7 @@ omit = ["src/main.py", "*/__init__.py"]
 [tool.coverage.report]
 fail_under = 80
 show_missing = true
-exclude_lines = [
-    "pragma: no cover",
+exclude_also = [
     "if __name__ == .__main__.:",
     "raise NotImplementedError",
 ]

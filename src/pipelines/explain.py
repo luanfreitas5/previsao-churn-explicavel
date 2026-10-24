@@ -37,7 +37,7 @@ def run_explain(paths: ProjectPaths) -> None:
     plot_shap_importance(importances, paths.figures_dir)
     write_json(
         {"global_importance": importances.to_dict(orient="records")},
-        paths.reports_dir / "shap_global_importance.json",
+        paths.metrics_file.parent / "shap_global_importance.json",
     )
     logger.info(
         "Explicabilidade global concluída. Feature mais influente: %s",

@@ -1,18 +1,23 @@
 # =============================================================================
 # paths.yaml — caminhos de dados, modelos e saídas (relativos à raiz do projeto).
 # Resolvidos em src/config/paths.py com pathlib.Path.
+#
+# Arquitetura medalhão:
+#   bronze — dados exatamente como recebidos (CSVs da Olist; imutável, nunca editar)
+#   silver — tabelas limpas e tipadas (datas convertidas), em parquet
+#   gold   — base curada para modelagem (features RFM + alvo, treino e teste)
 # =============================================================================
 
 data:
-  raw: data/raw
-  interim: data/interim
-  processed: data/processed
+  bronze: data/bronze
+  silver: data/silver
+  gold: data/gold
 
-# Arquivos-chave gerados pela pipeline (dentro de data/processed).
-processed_files:
-  features: data/processed/churn_features.parquet
-  train: data/processed/train.parquet
-  test: data/processed/test.parquet
+# Arquivos-chave gerados pela pipeline (dentro de data/gold).
+gold_files:
+  features: data/gold/churn_features.parquet
+  train: data/gold/train.parquet
+  test: data/gold/test.parquet
 
 models:
   dir: models
@@ -22,7 +27,7 @@ models:
 reports:
   dir: reports
   figures: reports/figures
-  metrics: reports/metrics.json
+  metrics: reports/metrics/metrics.json
   model_cards: reports/model_cards
   datasheets: reports/datasheets
 

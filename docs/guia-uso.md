@@ -11,7 +11,7 @@ make hooks               # instala os hooks de pre-commit
 ## Dados
 
 Baixe o [Brazilian E-Commerce Public Dataset by Olist](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce)
-e extraia os CSVs em `data/raw/`.
+e extraia os CSVs em `data/bronze/` (a camada bronze é imutável).
 
 ## Executando a pipeline
 

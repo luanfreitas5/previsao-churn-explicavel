@@ -1,59 +1,53 @@
 # =============================================================================
-# .pre-commit-config.yaml — apenas checagens RÁPIDAS, para não criar atrito no
-# commit. Type checking (basedPyright), segurança (bandit) e complexidade
-# (xenon/radon) rodam no CI, conforme o CLAUDE.md.
+# .pre-commit-config.yaml — apenas verificações RÁPIDAS, para não criar atrito no
+# commit. Checagens pesadas (basedPyright, bandit, vulture, refurb, xenon,
+# interrogate, pip-audit, suíte completa) rodam no CI e em `make check`.
 #
 # Setup:
-#   uv run pre-commit install
-#   uv run pre-commit install --hook-type commit-msg   # ativa o commitizen
-#   uv run detect-secrets scan > .secrets.baseline      # gera o baseline
+#   uv run pre-commit install --hook-type pre-commit --hook-type commit-msg
+#   uv run detect-secrets scan > .secrets.baseline
+#   uv run pre-commit autoupdate          # reatualiza os `rev` fixados abaixo
 # =============================================================================
 
 default_install_hook_types: [pre-commit, commit-msg]
 
 repos:
-  # --- Higiene básica de arquivos -----------------------------------------
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
     hooks:
-      - id: trailing-whitespace
-      - id: end-of-file-fixer
+      - id: check-added-large-files
+        args: [--maxkb=1000]   # bloqueia commit de dados/modelos grandes
+      - id: check-merge-conflict
       - id: check-yaml
       - id: check-toml
-      - id: check-merge-conflict
-      - id: check-added-large-files
-        args: ["--maxkb=1000"]   # bloqueia commit de dados/modelos grandes
       - id: detect-private-key
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
 
-  # --- Ruff: lint + format -------------------------------------------------
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.15.22
     hooks:
       - id: ruff
-        args: ["--fix"]
+        args: [--fix]
       - id: ruff-format
 
-  # --- detect-secrets: impede vazamento de credenciais ---------------------
   - repo: https://github.com/Yelp/detect-secrets
     rev: v1.5.0
     hooks:
       - id: detect-secrets
-        args: ["--baseline", ".secrets.baseline"]
+        args: [--baseline, .secrets.baseline]
 
-  # --- nbstripout: remove outputs de notebooks antes do commit -------------
   - repo: https://github.com/kynan/nbstripout
     rev: 0.9.1
     hooks:
       - id: nbstripout
 
-  # --- commitizen: valida Conventional Commits (stage commit-msg) ----------
   - repo: https://github.com/commitizen-tools/commitizen
     rev: v4.16.5
     hooks:
       - id: commitizen
         stages: [commit-msg]
 
-  # --- Smoke tests rápidos (local) -----------------------------------------
   - repo: local
     hooks:
       - id: pytest-smoke
@@ -61,4 +55,5 @@ repos:
         entry: uv run pytest -m smoke -q --no-cov
         language: system
         pass_filenames: false
+        types: [python]
         stages: [pre-commit]

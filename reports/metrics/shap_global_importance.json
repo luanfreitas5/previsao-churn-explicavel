@@ -1,0 +1,52 @@
+{
+  "global_importance": [
+    {
+      "feature": "UF do cliente",
+      "mean_abs_shap": 0.5767149391217855
+    },
+    {
+      "feature": "Dias desde a última compra",
+      "mean_abs_shap": 0.34277332358615686
+    },
+    {
+      "feature": "Frete médio (BRL)",
+      "mean_abs_shap": 0.27587326940088513
+    },
+    {
+      "feature": "Ticket médio (BRL)",
+      "mean_abs_shap": 0.2505321518481015
+    },
+    {
+      "feature": "Valor total gasto (BRL)",
+      "mean_abs_shap": 0.22521490837646105
+    },
+    {
+      "feature": "Prazo médio de entrega (dias)",
+      "mean_abs_shap": 0.1930441938485973
+    },
+    {
+      "feature": "Tempo como cliente (dias)",
+      "mean_abs_shap": 0.1708676131478444
+    },
+    {
+      "feature": "Nota média das avaliações",
+      "mean_abs_shap": 0.13173353891534756
+    },
+    {
+      "feature": "Média de parcelas",
+      "mean_abs_shap": 0.11178464386169316
+    },
+    {
+      "feature": "Número de pedidos",
+      "mean_abs_shap": 0.032345471740406244
+    },
+    {
+      "feature": "Taxa de entregas atrasadas",
+      "mean_abs_shap": 0.02259781271258832
+    },
+    {
+      "feature": "Produtos distintos comprados",
+      "mean_abs_shap": 0.0194114779016628
+    }
+  ]
+}

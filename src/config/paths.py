@@ -22,7 +22,7 @@ def _resolve(relative: str) -> Path:
     Parameters
     ----------
     relative : str
-        Caminho relativo à raiz do projeto (ex.: ``"data/raw"``).
+        Caminho relativo à raiz do projeto (ex.: ``"data/bronze"``).
 
     Returns
     -------
@@ -40,10 +40,10 @@ class ProjectPaths:
     ----------
     root : pathlib.Path
         Raiz do projeto.
-    data_raw, data_interim, data_processed : pathlib.Path
-        Diretórios de dados por estágio.
+    data_bronze, data_silver, data_gold : pathlib.Path
+        Diretórios das camadas medalhão (bronze → silver → gold).
     features_file, train_file, test_file : pathlib.Path
-        Artefatos de dados processados.
+        Artefatos da camada gold.
     models_dir, model_file, model_metadata_file : pathlib.Path
         Diretório e artefatos de modelo.
     reports_dir, figures_dir, metrics_file : pathlib.Path
@@ -55,14 +55,12 @@ class ProjectPaths:
     """
 
     root: Path = ROOT
-    data_raw: Path = field(default_factory=lambda: _resolve("data/raw"))
-    data_interim: Path = field(default_factory=lambda: _resolve("data/interim"))
-    data_processed: Path = field(default_factory=lambda: _resolve("data/processed"))
-    features_file: Path = field(
-        default_factory=lambda: _resolve("data/processed/churn_features.parquet")
-    )
-    train_file: Path = field(default_factory=lambda: _resolve("data/processed/train.parquet"))
-    test_file: Path = field(default_factory=lambda: _resolve("data/processed/test.parquet"))
+    data_bronze: Path = field(default_factory=lambda: _resolve("data/bronze"))
+    data_silver: Path = field(default_factory=lambda: _resolve("data/silver"))
+    data_gold: Path = field(default_factory=lambda: _resolve("data/gold"))
+    features_file: Path = field(default_factory=lambda: _resolve("data/gold/churn_features.parquet"))
+    train_file: Path = field(default_factory=lambda: _resolve("data/gold/train.parquet"))
+    test_file: Path = field(default_factory=lambda: _resolve("data/gold/test.parquet"))
     models_dir: Path = field(default_factory=lambda: _resolve("models"))
     model_file: Path = field(default_factory=lambda: _resolve("models/churn_lightgbm.joblib"))
     model_metadata_file: Path = field(
@@ -70,7 +68,7 @@ class ProjectPaths:
     )
     reports_dir: Path = field(default_factory=lambda: _resolve("reports"))
     figures_dir: Path = field(default_factory=lambda: _resolve("reports/figures"))
-    metrics_file: Path = field(default_factory=lambda: _resolve("reports/metrics.json"))
+    metrics_file: Path = field(default_factory=lambda: _resolve("reports/metrics/metrics.json"))
     model_cards_dir: Path = field(default_factory=lambda: _resolve("reports/model_cards"))
     datasheets_dir: Path = field(default_factory=lambda: _resolve("reports/datasheets"))
     logs_dir: Path = field(default_factory=lambda: _resolve("logs"))
@@ -78,8 +76,8 @@ class ProjectPaths:
     def ensure_dirs(self) -> None:
         """Cria os diretórios de saída caso ainda não existam."""
         for directory in (
-            self.data_interim,
-            self.data_processed,
+            self.data_silver,
+            self.data_gold,
             self.models_dir,
             self.reports_dir,
             self.figures_dir,
@@ -111,8 +109,8 @@ def get_paths(paths_yaml: Path | None = None) -> ProjectPaths:
     Examples
     --------
     >>> paths = get_paths()
-    >>> paths.data_raw.name
-    'raw'
+    >>> paths.data_bronze.name
+    'bronze'
     """
     yaml_path = paths_yaml or (CONFIGS_DIR / "paths.yaml")
     if not yaml_path.exists():
@@ -122,17 +120,17 @@ def get_paths(paths_yaml: Path | None = None) -> ProjectPaths:
         cfg = yaml.safe_load(handle)
 
     data = cfg["data"]
-    processed = cfg["processed_files"]
+    gold = cfg["gold_files"]
     models = cfg["models"]
     reports = cfg["reports"]
 
     return ProjectPaths(
-        data_raw=_resolve(data["raw"]),
-        data_interim=_resolve(data["interim"]),
-        data_processed=_resolve(data["processed"]),
-        features_file=_resolve(processed["features"]),
-        train_file=_resolve(processed["train"]),
-        test_file=_resolve(processed["test"]),
+        data_bronze=_resolve(data["bronze"]),
+        data_silver=_resolve(data["silver"]),
+        data_gold=_resolve(data["gold"]),
+        features_file=_resolve(gold["features"]),
+        train_file=_resolve(gold["train"]),
+        test_file=_resolve(gold["test"]),
         models_dir=_resolve(models["dir"]),
         model_file=_resolve(models["model_file"]),
         model_metadata_file=_resolve(models["metadata_file"]),

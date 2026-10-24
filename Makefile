@@ -1,112 +1,94 @@
-# --- Configuração ----------------------------------------------------------
-PYTHON := python
+# Atalhos reprodutíveis. `make check` replica o CI localmente.
 UV := uv
-RUN := $(UV) run python src/main.py    # 'src' vira raiz do path ao rodar o script
+RUN := $(UV) run python -m src.main
 
 .DEFAULT_GOAL := help
-.PHONY: help init venv install install-all install-models  update lock export \
-	check format lint typecheck security deadcode complexity docstrings refurb quality \
-	test smoke hooks pre-commit update-hooks update-version docs docs-serve docs-deploy profile clean cache jupyter notebook add remove tree \
-	clean-processed clean-reports clean-outputs clean-notebooks features train evaluate explain pipeline app
+.PHONY: help install hooks update lint format typecheck security quality test smoke check \
+	pre-commit update-hooks update-version features train evaluate explain pipeline reproduce \
+	app docs docs-serve docs-deploy docker-build docker-up docker-down profile clean clean-data \
+	clean-reports clean-notebooks
 
 help:  ## Lista os alvos disponíveis
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
 		awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
 
-init:  ## Inicializa o projeto (instala dependências + hooks)
-	$(MAKE) install
-	$(MAKE) hooks
+# --- Ambiente ---------------------------------------------------------------
+install:  ## Instala todos os grupos de dependências + extra do app + hooks
+	$(UV) sync --all-groups --extra app
+	$(UV) run pre-commit install --hook-type pre-commit --hook-type commit-msg
 
-venv:  ## Cria o ambiente virtual (requer: uv)
-	$(UV) venv
+hooks:  ## Reinstala os hooks do pre-commit e regenera o baseline de segredos
+	$(UV) run pre-commit install --hook-type pre-commit --hook-type commit-msg
+	$(UV) run detect-secrets scan > .secrets.baseline
 
-install:  ## Instala dependências (runtime + dev)
-	$(UV) sync --dev
-
-install-all:  ## Instala tudo (todos os extras + dev)
-	$(UV) sync --all-extras --dev
-
-install-models:  ## Instala os extras dos modelos Hugging Face (torch + transformers)
-	$(UV) sync --extra models --dev
-
-update:  ## Atualiza todas as dependências e sincroniza
+update:  ## Atualiza o lock e sincroniza todas as dependências
 	$(UV) lock --upgrade
-	$(UV) sync --all-groups
+	$(UV) sync --all-groups --extra app
 
-lock:
-	$(UV) lock
+# --- Qualidade --------------------------------------------------------------
+lint:  ## Lint + checagem de formatação (ruff, sem alterar arquivos)
+	$(UV) run ruff check src tests app
+	$(UV) run ruff format --check src tests app
 
-export:
-	$(UV) export --no-hashes -o requirements.txt
-
-# --- Qualidade -------------------------------------------------------------
-check:  ## Checa formatação com ruff
-	$(UV) run ruff check .
-
-format:  ## Formata o código com ruff
-	$(UV) run ruff format .
-
-lint: ## Lint com ruff
-	$(UV) run ruff check --fix .
+format:  ## Corrige o lint e formata o código com ruff
+	$(UV) run ruff check --fix src tests app
+	$(UV) run ruff format src tests app
 
 typecheck:  ## Type checking estático (basedPyright)
 	$(UV) run basedpyright
 
-security:  ## Análise de segurança (bandit + pip-audit)
-	$(UV) run bandit -r src -c pyproject.toml
+security:  ## Segurança do código (bandit) e das dependências (pip-audit)
+	$(UV) run bandit -c pyproject.toml -r src
 	$(UV) run pip-audit
 
-deadcode:  ## Detecta código morto (vulture)
-	$(UV) run vulture src
-
-complexity:  ## Limites de complexidade (xenon)
+quality:  ## Código morto, modernização, complexidade e docstrings
+	$(UV) run vulture
+	$(UV) run refurb src
 	$(UV) run xenon --max-absolute B --max-modules A --max-average A src
-
-docstrings:  ## Cobertura de docstrings (interrogate)
 	$(UV) run interrogate -v src
 
-refurb:  ## Detecta código redundante (refurb)
-	$(UV) run refurb src
+# --- Testes -----------------------------------------------------------------
+test:  ## Roda os testes com cobertura (meta >= 80%)
+	$(UV) run pytest -m "not slow" --cov --cov-report=term-missing
 
-quality: format lint typecheck security deadcode complexity docstrings refurb   ## Roda toda a suíte de qualidade (espelha o CI)
+smoke:  ## Roda apenas os smoke tests (os mesmos do pre-commit)
+	$(UV) run pytest -m smoke -q --no-cov
 
-# --- Testes ----------------------------------------------------------------
-test:  ## Roda os testes com cobertura
-	$(UV) run pytest -m "not slow"
-
-smoke:  ## Roda apenas os smoke tests
-	$(UV) run pytest -m smoke -q
-
-hooks:  ## Instala os hooks do pre-commit
-	$(UV) run pre-commit install
-	$(UV) run pre-commit install --hook-type commit-msg
-	$(UV) run detect-secrets scan > .secrets.baseline
+check: lint typecheck security quality test  ## Roda a suíte completa do CI localmente
 
 pre-commit:  ## Roda todos os hooks do pre-commit em todos os arquivos
 	$(UV) run pre-commit run --all-files
 
-update-hooks:  ## Atualiza os hooks do pre-commit
+update-hooks:  ## Atualiza as versões dos hooks do pre-commit
 	$(UV) run pre-commit autoupdate
 
-update-version:
-	$(UV) add --dev commitizen
-	$(UV) run cz changelog
+update-version:  ## Gera o CHANGELOG e incrementa a versão (Conventional Commits + SemVer)
 	$(UV) run cz bump --changelog --yes
 
-# --- Limpeza de saídas do pipeline ------------------------------------------
-clean-processed:  ## Remove os artefatos de dados processados
-	rm -rf data/processed/*.parquet
+# --- Pipeline de ML (bronze -> silver -> gold -> modelo) --------------------
+features:  ## bronze -> silver (tipado) -> gold (RFM + alvo, treino/teste)
+	$(RUN) --stage features
 
-clean-reports:  ## Remove os relatórios gerados (pastas por modelo + comparação)
-	find reports -mindepth 1 -maxdepth 1 -type d -exec rm -rf {} +
+train:  ## Treina o LightGBM com CV e registra os runs no MLflow
+	$(RUN) --stage train
 
-clean-outputs: clean-processed clean-reports  ## Remove todas as saídas do pipeline
+evaluate:  ## Avalia o modelo (métricas com IC, calibração, justiça por UF)
+	$(RUN) --stage evaluate
 
-clean-notebooks:  ## Remove os notebooks com células vazias
-	$(UV) run nbstripout notebooks
+explain:  ## Gera as explicações SHAP globais
+	$(RUN) --stage explain
 
-# --- Documentação ----------------------------------------------------------
-docs:  ## Constrói a documentação (modo estrito)
+pipeline:  ## Executa a pipeline ponta a ponta (features -> train -> evaluate -> explain)
+	$(RUN) --stage all
+
+reproduce: pipeline  ## Reproduz os resultados a partir da camada bronze
+
+# --- Aplicação --------------------------------------------------------------
+app:  ## Sobe o dashboard Streamlit de explicabilidade
+	$(UV) run streamlit run app/dashboard.py
+
+# --- Documentação -----------------------------------------------------------
+docs:  ## Constrói a documentação em modo estrito
 	$(UV) run mkdocs build --strict
 
 docs-serve:  ## Servidor local da documentação
@@ -115,50 +97,29 @@ docs-serve:  ## Servidor local da documentação
 docs-deploy:  ## Publica a documentação no GitHub Pages
 	$(UV) run mkdocs gh-deploy --force
 
-# --- Utilitários -----------------------------------------------------------
-profile:  ## Exemplo de profiling com scalene (ajuste o alvo)
-	$(UV) run scalene src/main.py
+# --- Containers -------------------------------------------------------------
+docker-build:  ## Constrói a imagem do dashboard
+	docker compose build dashboard
+
+docker-up:  ## Sobe dashboard + MLflow (modelo e dados gold montados do host)
+	docker compose up --build
+
+docker-down:  ## Derruba os serviços
+	docker compose down
+
+# --- Utilitários ------------------------------------------------------------
+profile:  ## Profiling da pipeline com scalene (ajuste o alvo)
+	$(UV) run --group profiling scalene src/main.py
 
 clean:  ## Remove caches e artefatos temporários
-	rm -rf .pytest_cache .ruff_cache .mypy_cache htmlcov coverage.xml site
-	find . -type d -name __pycache__ -exec rm -rf {} +
+	rm -rf .pytest_cache .ruff_cache .mypy_cache .coverage htmlcov coverage.xml site
+	find . -type d -name __pycache__ -not -path "./.venv/*" -exec rm -rf {} +
 
-cache:
-	$(UV) cache clean
+clean-data:  ## Remove as camadas derivadas (silver e gold); a bronze é imutável
+	rm -f data/silver/*.parquet data/gold/*.parquet
 
-# --- Jupyter ----------------------------------------------------------------
-jupyter:
-	$(UV) run jupyter lab
+clean-reports:  ## Remove figuras geradas (as métricas JSON são commitadas)
+	rm -f reports/figures/*.png reports/figures/*.svg
 
-notebook:
-	$(UV) run jupyter notebook
-
-# --- Gerenciamento de pacotes -----------------------------------------------
-add:
-	$(UV) add $(PKG)
-
-remove:
-	$(UV) remove $(PKG)
-
-tree:
-	$(UV) tree
-
-# --- Pipeline de ML --------------------------------------------------------
-features:  ## Constrói a base RFM + alvo de churn (data/processed)
-	$(RUN) --stage features
-
-train:  ## Treina o modelo LightGBM e registra no MLflow
-	$(RUN) --stage train
-
-evaluate:  ## Avalia o modelo treineado (métricas, calibração, fairness)
-	$(RUN) --stage evaluate
-
-explain:  ## Gera explicações SHAP globais e por cliente
-	$(RUN) --stage explain
-
-pipeline:  ## Executa a pipeline ponta a ponta (features -> train -> evaluate -> explain)
-	$(RUN) --stage all
-
-# --- Aplicação -------------------------------------------------------------
-app:  ## Sobe o dashboard Streamlit de explicabilidade
-	$(UV) run streamlit run app/dashboard.py
+clean-notebooks:  ## Remove os outputs dos notebooks (nbstripout)
+	$(UV) run nbstripout notebooks/*.ipynb

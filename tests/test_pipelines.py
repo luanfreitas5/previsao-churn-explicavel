@@ -108,23 +108,23 @@ def _write_raw_olist(raw_dir: Path, n_customers: int = 240, seed: int = 42) -> N
 
 def _tmp_paths(tmp_path: Path, raw_dir: Path) -> ProjectPaths:
     """Constrói uma coleção de caminhos totalmente sob ``tmp_path`` para o teste."""
-    processed = tmp_path / "data" / "processed"
+    gold = tmp_path / "data" / "gold"
     models = tmp_path / "models"
     reports = tmp_path / "reports"
     return ProjectPaths(
         root=tmp_path,
-        data_raw=raw_dir,
-        data_interim=tmp_path / "data" / "interim",
-        data_processed=processed,
-        features_file=processed / "churn_features.parquet",
-        train_file=processed / "train.parquet",
-        test_file=processed / "test.parquet",
+        data_bronze=raw_dir,
+        data_silver=tmp_path / "data" / "silver",
+        data_gold=gold,
+        features_file=gold / "churn_features.parquet",
+        train_file=gold / "train.parquet",
+        test_file=gold / "test.parquet",
         models_dir=models,
         model_file=models / "churn_lightgbm.joblib",
         model_metadata_file=models / "churn_lightgbm_meta.json",
         reports_dir=reports,
         figures_dir=reports / "figures",
-        metrics_file=reports / "metrics.json",
+        metrics_file=reports / "metrics" / "metrics.json",
         model_cards_dir=reports / "model_cards",
         datasheets_dir=reports / "datasheets",
         logs_dir=tmp_path / "logs",
@@ -143,6 +143,7 @@ def pipeline_settings(tmp_path: Path):
         settings.mlflow.experiment_name,
         artifact_location=(tmp_path / "mlartifacts").as_uri(),
     )
+    settings.mlflow.require_clean_tree = False  # a árvore do repositório pode estar suja
     settings.cross_validation.n_splits = 3
     settings.model.lightgbm.n_estimators = 60
     return settings
@@ -151,7 +152,7 @@ def pipeline_settings(tmp_path: Path):
 @pytest.mark.integration
 def test_end_to_end_pipeline(tmp_path: Path, pipeline_settings) -> None:
     """A pipeline completa roda do dado bruto à explicação, gerando todos os artefatos."""
-    raw_dir = tmp_path / "raw"
+    raw_dir = tmp_path / "bronze"
     _write_raw_olist(raw_dir)
     paths = _tmp_paths(tmp_path, raw_dir)
 
@@ -160,6 +161,7 @@ def test_end_to_end_pipeline(tmp_path: Path, pipeline_settings) -> None:
     assert paths.features_file.exists()
     assert paths.train_file.exists()
     assert paths.test_file.exists()
+    assert (paths.data_silver / "orders.parquet").exists()
 
     # 2) Treino com CV + persistência + rastreamento.
     run_train(pipeline_settings, paths)
@@ -178,7 +180,7 @@ def test_end_to_end_pipeline(tmp_path: Path, pipeline_settings) -> None:
     # 4) Explicabilidade global SHAP.
     run_explain(paths)
     assert (paths.figures_dir / "shap_importance.png").exists()
-    assert (paths.reports_dir / "shap_global_importance.json").exists()
+    assert (paths.metrics_file.parent / "shap_global_importance.json").exists()
 
 
 def test_load_frame_missing_raises(tmp_path: Path) -> None:
