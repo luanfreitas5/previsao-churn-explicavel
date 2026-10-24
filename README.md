@@ -1,4 +1,4 @@
-# 📉 Churn explicável na Olist: ranking de risco de não recompra com LightGBM + SHAP
+# 📉 Previsão de Churn com Explicabilidade (Olist): ranking de risco de não recompra com LightGBM + SHAP
 
 [![CI](https://github.com/luanfreitas5/previsao-churn-explicavel/actions/workflows/ci.yml/badge.svg)](https://github.com/luanfreitas5/previsao-churn-explicavel/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/luanfreitas5/previsao-churn-explicavel/graph/badge.svg)](https://codecov.io/gh/luanfreitas5/previsao-churn-explicavel)
