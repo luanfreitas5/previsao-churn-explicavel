@@ -5786,7 +5786,7 @@ requires-dist = [
     { name = "mlflow", specifier = ">=2.14" },
     { name = "numpy", specifier = ">=1.26" },
     { name = "pandas", specifier = ">=2.2" },
-    { name = "pandera", extras = ["polars"], specifier = ">=0.20" },
+    { name = "pandera", extras = ["polars"], specifier = ">=0.32.1" },
     { name = "plotly", marker = "extra == 'app'", specifier = ">=6.9.0" },
     { name = "polars", specifier = ">=1.0" },
     { name = "pyarrow", specifier = ">=16.0" },
