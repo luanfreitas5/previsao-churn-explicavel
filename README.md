@@ -8,6 +8,8 @@
 
 > **Resultado:** o LightGBM atinge PR-AUC (*average precision*) = **0,9919 (IC 95%: 0,9897–0,9939)** no teste, contra **0,9882** do baseline `DummyClassifier` (média em CV), em 11.272 clientes da Olist — mas a prevalência de churn é 98,8%, então a PR-AUC quase não sai do piso do baseline e a **ROC-AUC é de apenas 0,62**. O modelo serve para **ranquear** clientes para retenção, não para estimar probabilidades absolutas.
 
+![Previsão de Churn Explicável](banner/churn.png)
+
 ## 🎯 Problema
 
 - **Quem decide o quê:** o time de retenção escolhe quais clientes contatar primeiro em campanhas de recompra; cada previsão vem com os fatores que a explicam (SHAP) em linguagem de negócio.
