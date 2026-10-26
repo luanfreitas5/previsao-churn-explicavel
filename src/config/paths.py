@@ -58,7 +58,9 @@ class ProjectPaths:
     data_bronze: Path = field(default_factory=lambda: _resolve("data/bronze"))
     data_silver: Path = field(default_factory=lambda: _resolve("data/silver"))
     data_gold: Path = field(default_factory=lambda: _resolve("data/gold"))
-    features_file: Path = field(default_factory=lambda: _resolve("data/gold/churn_features.parquet"))
+    features_file: Path = field(
+        default_factory=lambda: _resolve("data/gold/churn_features.parquet")
+    )
     train_file: Path = field(default_factory=lambda: _resolve("data/gold/train.parquet"))
     test_file: Path = field(default_factory=lambda: _resolve("data/gold/test.parquet"))
     models_dir: Path = field(default_factory=lambda: _resolve("models"))
